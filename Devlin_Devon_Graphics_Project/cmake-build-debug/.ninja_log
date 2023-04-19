@@ -1,0 +1,4 @@
+# ninja log v5
+106	2658	7035960754965814	CMakeFiles/opengl_project.dir/main.cpp.obj	ce89cafa34219676
+1	5117	7035960779570764	CMakeFiles/GLAD.dir/glad.c.obj	24c0a8599937df51
+5119	5260	7035960781012499	libGLAD.a	c9c497054c5deaad

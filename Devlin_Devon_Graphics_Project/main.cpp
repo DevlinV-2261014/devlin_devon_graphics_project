@@ -5,11 +5,20 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include "file_reader.h"
+using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 int main() {
+	std::cout << "Hello World!" << std::endl;
+
+	std::string layout{ readMazeLayout("maze.txt") };
+	std::cout << layout << std::endl;
+
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -37,14 +46,14 @@ int main() {
 
 	while (!glfwWindowShouldClose(window))
 	{
-		// input
+		 //input
 		processInput(window);
 
-		// rendering commands here
+		 //rendering commands here
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// check and call events and swap the buffers
+		 //check and call events and swap the buffers
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 	}

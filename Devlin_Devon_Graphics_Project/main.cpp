@@ -5,8 +5,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <fstream>
-#include <string>
 #include "file_reader.h"
 using namespace std;
 
@@ -14,10 +12,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 int main() {
-	std::cout << "Hello World!" << std::endl;
+	cout << "Hello World!" << endl;
 
-	std::string layout{ readMazeLayout("maze.txt") };
-	std::cout << layout << std::endl;
+	string layout{ readMazeLayout("maze.txt") };
+	cout << layout << endl;
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -28,7 +26,7 @@ int main() {
 	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
 	if (window == NULL)
 	{
-		std::cout << "Failed to create GLFW window" << std::endl;
+		cout << "Failed to create GLFW window" << endl;
 		glfwTerminate();
 		return -1;
 	}
@@ -36,7 +34,7 @@ int main() {
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
+		cout << "Failed to initialize GLAD" << endl;
 		return -1;
 	}
 

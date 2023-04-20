@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <string>
+#include <vector>
 #include "FileReader.h"
 using namespace std;
 
@@ -10,8 +11,14 @@ void processInput(GLFWwindow* window);
 
 int main() {
 
-	string layout{ readMazeLayout("maze.txt") };
-	cout << layout << endl;
+	/*string layout{ readMazeLayout("maze.txt") };
+	cout << layout << endl;*/
+
+	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
+	/*for (glm::vec3 vec : cubeLocations) {
+		cout << vec.x << " " << vec.y << " " << vec.z << endl;
+		;
+	}*/
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

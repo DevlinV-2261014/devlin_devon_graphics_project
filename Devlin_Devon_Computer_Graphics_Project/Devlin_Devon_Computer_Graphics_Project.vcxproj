@@ -147,6 +147,16 @@
   <ItemGroup>
     <Text Include="maze.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxBack.png" />
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxBottom.png" />
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxFront.png" />
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxFull.png" />
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxLeft.png" />
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxRight.png" />
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxTop.png" />
+    <Image Include="wall.jpg" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

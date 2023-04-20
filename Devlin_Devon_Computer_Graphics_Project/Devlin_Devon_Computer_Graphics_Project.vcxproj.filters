@@ -16,6 +16,9 @@
     <Filter Include="Resource Files\textfiles">
       <UniqueIdentifier>{ecd5cd56-3416-4283-b7ff-321a4fd94511}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\textures">
+      <UniqueIdentifier>{c39801f0-ac31-44c5-ae1d-55a24b100d42}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -37,5 +40,31 @@
     <Text Include="maze.txt">
       <Filter>Resource Files\textfiles</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="wall.jpg">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxTop.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxBack.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxBottom.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxFront.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxFull.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxLeft.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxRight.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>

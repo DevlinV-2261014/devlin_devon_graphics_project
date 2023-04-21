@@ -140,9 +140,11 @@
     <ClCompile Include="FileReader.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileReader.h" />
+    <ClInclude Include="Shader.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="maze.txt" />
@@ -155,7 +157,11 @@
     <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxLeft.png" />
     <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxRight.png" />
     <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxTop.png" />
-    <Image Include="wall.jpg" />
+    <Image Include="wall.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="walls.fs" />
+    <None Include="walls.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

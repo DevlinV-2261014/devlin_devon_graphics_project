@@ -19,6 +19,9 @@
     <Filter Include="Resource Files\textures">
       <UniqueIdentifier>{c39801f0-ac31-44c5-ae1d-55a24b100d42}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders">
+      <UniqueIdentifier>{ac8c42a4-7ab3-418e-bcb9-cf72096e9179}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -30,9 +33,15 @@
     <ClCompile Include="FileReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -42,9 +51,6 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="wall.jpg">
-      <Filter>Resource Files\textures</Filter>
-    </Image>
     <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxTop.png">
       <Filter>Resource Files\textures</Filter>
     </Image>
@@ -66,5 +72,16 @@
     <Image Include="..\..\..\..\OneDrive\UHasselt\Schakeljaar\Computer_Graphics\Project\SkyBoxRight.png">
       <Filter>Resource Files\textures</Filter>
     </Image>
+    <Image Include="wall.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="walls.vs">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="walls.fs">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

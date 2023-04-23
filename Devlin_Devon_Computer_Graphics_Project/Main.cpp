@@ -16,8 +16,14 @@
 #include "stb_image.h"
 using namespace std;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+// Function declaradions
+void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
+void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
+
+
+// Cube vertices
 float cubeVertices[] = {
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -62,8 +68,25 @@ float cubeVertices[] = {
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
+// Screen settings
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
+
+// Camera settings
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+bool mouse = true;
+float cameraYaw = -90.0f;
+float cameraPitch = 0.0f;
+float cameraLastX = SCREEN_WIDTH / 2.0f;
+float cameraLastY = SCREEN_HEIGHT / 2.0f;
+float cameraFov = 45.0f;
+
+// Timings
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 int main() {
 
@@ -91,7 +114,12 @@ int main() {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glfwSetCursorPosCallback(window, mouseCalllback);
+	glfwSetScrollCallback(window, scrollCallback);
+
+	// Capture our mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -122,12 +150,17 @@ int main() {
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+	// Wall textures
+	unsigned int wallTexture;
+	glGenTextures(1, &wallTexture);
+	glBindTexture(GL_TEXTURE_2D, wallTexture);
+
 	// Create the wall textures and put them on
 	// Wrap
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	// Filter
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	int width;
@@ -135,10 +168,6 @@ int main() {
 	int nrChannels;
 	//stbi_set_flip_vertically_on_load(true);
 	unsigned char *data = stbi_load("wall.png", &width, &height, &nrChannels, 0);
-
-	unsigned int wallTexture;
-	glGenTextures(1, &wallTexture);
-	glBindTexture(GL_TEXTURE_2D, wallTexture);
 
 	if (data) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -170,11 +199,8 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 
 		mazeShader.use();
-
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 projection = glm::mat4(1.0f);
-		projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 
 		mazeShader.setMat4("projection", projection);
 		mazeShader.setMat4("view", view);
@@ -203,7 +229,7 @@ int main() {
 	return 0;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
@@ -212,5 +238,74 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	{
 		glfwSetWindowShouldClose(window, true);
+	}
+
+	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		cameraPosition += cameraSpeed * cameraFront;
+		cout << "Slide up";
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		cameraPosition -= cameraSpeed * cameraFront;
+		cout << "Falling into the abyss";
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		cout << "Slide to the left";
+	}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		cout << "Slide to the right";
+	}
 }
+
+void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
+	cameraFov -= (float)yOffset;
+	if (cameraFov < 1.0f) {
+		cameraFov = 1.0f;
+	}
+	if (cameraFov > 45.0f) {
+		cameraFov = 45.0f;
+	}
+}
+
+void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
+	float xPos = static_cast<float>(xPosition);
+	float yPos = static_cast<float>(yPosition);
+
+	if (mouse) {
+		cameraLastX = xPos;
+		cameraLastY = yPos;
+		mouse = false;
+	}
+
+	float xOffset = xPos - cameraLastX;
+	float yOffset = cameraLastY - yPos;
+
+	cameraLastX = xPos;
+	cameraLastY = yPos;
+
+	float cameraSensitivy = 0.1f;
+	xOffset *= cameraSensitivy;
+	yOffset *= cameraSensitivy;
+
+	cameraYaw += xOffset;
+	cameraPitch += yOffset;
+
+	if (cameraPitch > 89.0f) {
+		cameraPitch = 89.0f;
+	}
+	if (cameraPitch < -89.0f) {
+		cameraPitch = -89.0f;
+	}
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+	front.y = sin(glm::radians(cameraPitch));
+	front.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+	cameraFront = glm::normalize(front);
+}
+
+

@@ -75,8 +75,8 @@
     <LibraryPath>C:\Users\devli\Documents\GitHub\devlin_devon_graphics_project\Devlin_Devon_Computer_Graphics_Project\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\devli\Documents\GitHub\devlin_devon_graphics_project\Devlin_Devon_Computer_Graphics_Project\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\devli\Documents\GitHub\devlin_devon_graphics_project\Devlin_Devon_Computer_Graphics_Project\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\devon\OneDrive\Devon\UH\Schakeljaar\Opdrachten\Computer Graphics\Project\devlin_devon_graphics_project\Devlin_Devon_Computer_Graphics_Project\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\devon\OneDrive\Devon\UH\Schakeljaar\Opdrachten\Computer Graphics\Project\devlin_devon_graphics_project\Devlin_Devon_Computer_Graphics_Project\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

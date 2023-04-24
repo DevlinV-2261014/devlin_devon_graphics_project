@@ -103,8 +103,8 @@ int main() {
 		}
 	}
 	// Add a block for every part of the maze
-	for (int i = 0; i < highestX; i++) {
-		for (int j = 0; j < highestZ; j++) {
+	for (int i = 0; i <= highestX; i++) {
+		for (int j = 0; j <= highestZ; j++) {
 			cubeLocations.push_back(glm::vec3(i, -1, j));
 		}
 	}

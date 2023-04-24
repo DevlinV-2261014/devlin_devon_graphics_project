@@ -89,33 +89,8 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 int main() {
-
-	// Read the maze layout into a string (Not needed anymore)
-	/*string layout{ readMazeLayout("maze.txt") };
-	cout << layout << endl;*/
-
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
-	/*for (glm::vec3 vec : cubeLocations) {
-		cout << vec.x << " " << vec.y << " " << vec.z << endl;
-	}*/
-
-	// this needs to be removed later PLAGIAAT
-	// world space positions of our cubes
-	cubeLocations = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
-	};
-
-
 
 	// Initialize the window
 	glfwInit();
@@ -230,13 +205,13 @@ int main() {
 
 		// render boxes PLAGIAAT
 		glBindVertexArray(VAO);
-		for (unsigned int i = 0; i < 10; i++)
+		for (unsigned int i = 0; i < cubeLocations.size(); i++)
 		{
 			// calculate the model matrix for each object and pass it to shader before drawing
 			glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
 			model = glm::translate(model, cubeLocations[i]);
-			float angle = 20.0f * i;
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			//float angle = 20.0f * i;
+			//model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 			mazeShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
@@ -267,19 +242,15 @@ void processInput(GLFWwindow* window)
 	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		cameraPosition += cameraSpeed * cameraFront;
-		cout << "Slide up";
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		cameraPosition -= cameraSpeed * cameraFront;
-		cout << "Falling into the abyss";
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-		cout << "Slide to the left";
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-		cout << "Slide to the right";
 	}
 }
 

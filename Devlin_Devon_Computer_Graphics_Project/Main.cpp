@@ -11,7 +11,6 @@
 #include "FileReader.h"
 #include "Shader.h"
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 using namespace std;
@@ -21,7 +20,6 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
-
 
 // Cube vertices
 float cubeVertices[] = {
@@ -92,6 +90,25 @@ int main() {
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
 
+	// Floor
+	// Find the highest x and Z to see where the floor should end.
+	int highestX = cubeLocations[0].x;
+	int highestZ = cubeLocations[0].z;
+	for (glm::vec3 location : cubeLocations) {
+		if (location.x > highestX) {
+			highestX = location.x;
+		}
+		if (location.z > highestZ) {
+			highestZ = location.z;
+		}
+	}
+	// Add a block for every part of the maze
+	for (int i = 0; i < highestX; i++) {
+		for (int j = 0; j < highestZ; j++) {
+			cubeLocations.push_back(glm::vec3(i, -1, j));
+		}
+	}
+
 	// Initialize the window
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -158,7 +175,7 @@ int main() {
 	int width;
 	int height;
 	int nrChannels;
-	//stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char *data = stbi_load("wall.png", &width, &height, &nrChannels, 0);
 
 	if (data) {
@@ -179,20 +196,19 @@ int main() {
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))
 	{
-		// per-frame time logic PLAGIAAT
-		// --------------------
+		// Change deltatime
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		
-		// input
+		// Input
 		processInput(window);
 
-		// rendering commands here
+		// Rendering
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// bind textures
+		// Bind textures
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 
@@ -203,19 +219,16 @@ int main() {
 		mazeShader.setMat4("view", view);
 		
 
-		// render boxes PLAGIAAT
 		glBindVertexArray(VAO);
-		for (unsigned int i = 0; i < cubeLocations.size(); i++)
+
+		for (glm::vec3 cube : cubeLocations)
 		{
-			// calculate the model matrix for each object and pass it to shader before drawing
-			glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-			model = glm::translate(model, cubeLocations[i]);
-			//float angle = 20.0f * i;
-			//model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cube);
 			mazeShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-		// check and call events and swap the buffers
+		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -300,5 +313,3 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 	front.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
 	cameraFront = glm::normalize(front);
 }
-
-

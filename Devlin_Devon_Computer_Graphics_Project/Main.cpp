@@ -71,8 +71,8 @@ const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
 // Camera settings
-glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 bool mouse = true;
@@ -298,14 +298,16 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 	yOffset *= cameraSensitivy;
 
 	cameraYaw += xOffset;
-	cameraPitch += yOffset;
 
-	if (cameraPitch > 89.0f) {
+	// This enables the user to look up
+	/*cameraPitch += yOffset;*/
+
+	/*if (cameraPitch > 89.0f) {
 		cameraPitch = 89.0f;
 	}
 	if (cameraPitch < -89.0f) {
 		cameraPitch = -89.0f;
-	}
+	}*/
 
 	glm::vec3 front;
 	front.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));

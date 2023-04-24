@@ -342,3 +342,5 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /.vscode
+
+Devlin_Devon_Computer_Graphics_Project/*.vcxproj*

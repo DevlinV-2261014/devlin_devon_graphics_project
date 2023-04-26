@@ -11,6 +11,8 @@
 #include "FileReader.h"
 #include "Shader.h"
 
+#include "MazeGen.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 using namespace std;
@@ -134,6 +136,9 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 int main() {
+	// generate random maze
+	MazeGen(19, 31);
+
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
 

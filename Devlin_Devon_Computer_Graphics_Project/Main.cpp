@@ -21,6 +21,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
+vector<glm::vec3> getLightPositions();
 
 // Cube vertices
 float cubeVertices[] = {
@@ -113,8 +114,8 @@ float skyboxVertices[] = {
 };
 
 // Screen settings
-const unsigned int SCREEN_WIDTH = 800;
-const unsigned int SCREEN_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 1000;
+const unsigned int SCREEN_HEIGHT = 800;
 
 // Camera settings
 glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -190,7 +191,8 @@ int main() {
 
 	// Shaders for the maze
 	Shader mazeShader("walls.vs", "walls.fs");
-	Shader skyboxShader("skybox.vs","skybox.fs");
+	Shader skyboxShader("skybox.vs", "skybox.fs");
+	Shader lightShader("light.vs", "light.fs");
 
 	unsigned int cubeVAO;
 	unsigned int cubeVBO;
@@ -211,6 +213,13 @@ int main() {
 
 	// Wall textures
 	unsigned int wallTexture = createTexture("wall.png");
+
+	// LIGHTNING
+	unsigned int lightVAO;
+	glGenVertexArrays(1, &lightVAO);
+	glBindVertexArray(lightVAO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 
 	// Skybox
 	vector<std::string> skyboxFaces
@@ -242,7 +251,7 @@ int main() {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		
+
 		// Input
 		processInput(window);
 
@@ -256,12 +265,15 @@ int main() {
 		mazeShader.setMat4("view", view);
 		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		mazeShader.setMat4("projection", projection);
+		// Apply Light
+		mazeShader.setVec3("objectColor", 0.19f, 0.34f, 0.30f);
+		mazeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(cubeVAO);
 
-		// Draw cubes
+		// Draw Cubes
 		for (glm::vec3 cube : cubeLocations)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
@@ -271,6 +283,23 @@ int main() {
 		}
 		glBindVertexArray(0);
 
+		// Draw light
+
+		vector<glm::vec3> lightPositions = getLightPositions();
+		lightShader.use();
+		lightShader.setMat4("projection", projection);
+		lightShader.setMat4("view", view);
+		for (glm::vec3 lightPos : lightPositions) {
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, lightPos);
+			model = glm::scale(model, glm::vec3(0.2f));
+			
+			glBindVertexArray(lightVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
+
+		// Draw Skybox
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
 		view = glm::mat4(glm::mat3(glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp)));
@@ -358,18 +387,24 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 	cameraYaw += xOffset;
 
 	// This enables the user to look up
-	/*cameraPitch += yOffset;*/
+	cameraPitch += yOffset;
 
-	/*if (cameraPitch > 89.0f) {
+	if (cameraPitch > 89.0f) {
 		cameraPitch = 89.0f;
 	}
 	if (cameraPitch < -89.0f) {
 		cameraPitch = -89.0f;
-	}*/
+	}
 
 	glm::vec3 front;
 	front.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
 	front.y = sin(glm::radians(cameraPitch));
 	front.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
 	cameraFront = glm::normalize(front);
+}
+
+vector<glm::vec3> getLightPositions() {
+	vector<glm::vec3> positions;
+	positions.push_back(glm::vec3(5.0f, 5.0f, 3.0f));
+	return positions;
 }

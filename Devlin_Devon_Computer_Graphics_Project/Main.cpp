@@ -271,8 +271,7 @@ int main() {
 
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
-		view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
-		//view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+		view = glm::mat4(glm::mat3(glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp)));
 		skyboxShader.setMat4("view", view);
 		skyboxShader.setMat4("projection", projection);
 

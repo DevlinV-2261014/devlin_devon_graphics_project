@@ -20,6 +20,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
+unsigned int createTexture(string image);
 unsigned int createCubemap(vector<string> skyBoxFaces);
 
 // Cube vertices
@@ -67,13 +68,14 @@ float cubeVertices[] = {
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-float skyboxVertices[] = {       
-	-1.0f,  1.0f, -1.0f,
-	-1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
+float skyboxVertices[] = {
+	// Back
+	-1.0f,  1.0f, -1.0f, // Top left
+	-1.0f, -1.0f, -1.0f, // Bottom left
+	 1.0f, -1.0f, -1.0f, // Bottom right
+	 1.0f, -1.0f, -1.0f, // Bottom right
+	 1.0f,  1.0f, -1.0f, // Top right
+	-1.0f,  1.0f, -1.0f, // Top left
 
 	-1.0f, -1.0f,  1.0f,
 	-1.0f, -1.0f, -1.0f,
@@ -206,33 +208,7 @@ int main() {
 	glEnableVertexAttribArray(1);
 
 	// Wall textures
-	unsigned int wallTexture;
-	glGenTextures(1, &wallTexture);
-	glBindTexture(GL_TEXTURE_2D, wallTexture);
-
-	// Create the wall textures and put them on
-	// Wrap
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// Filter
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	int width;
-	int height;
-	int channels;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load("wall.png", &width, &height, &channels, 0);
-
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		cout << "Cannot load the texture for the walls!" << endl;
-	}
-
-	stbi_image_free(data);
+	unsigned int wallTexture = createTexture("wall.png");
 
 	// Skybox
 	vector<std::string> skyboxFaces
@@ -274,10 +250,10 @@ int main() {
 
 		// Bind textures
 		mazeShader.use();
-		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		mazeShader.setMat4("projection", projection);
 		glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 		mazeShader.setMat4("view", view);
+		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		mazeShader.setMat4("projection", projection);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
@@ -291,6 +267,7 @@ int main() {
 			mazeShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+		glBindVertexArray(0);
 
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.use();
@@ -394,6 +371,37 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 	front.y = sin(glm::radians(cameraPitch));
 	front.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
 	cameraFront = glm::normalize(front);
+}
+
+unsigned int createTexture(string image)
+{
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	// Wrap
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Filter
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	int width;
+	int height;
+	int channels;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data = stbi_load("wall.png", &width, &height, &channels, 0);
+
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		cout << "Cannot load the texture for the walls!" << endl;
+	}
+
+	stbi_image_free(data);
+	return texture;
 }
 
 unsigned int createCubemap(vector<string> skyBoxFaces) {

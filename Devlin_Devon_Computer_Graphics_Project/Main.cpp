@@ -205,11 +205,14 @@ int main() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
 	// position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	// Texture coords
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+	// Lighting
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	// Wall textures
 	unsigned int wallTexture = createTexture("wall.png");
@@ -266,16 +269,21 @@ int main() {
 		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		mazeShader.setMat4("projection", projection);
 		// Apply Light
+		mazeShader.setFloat("constant", 1.0f);
+		mazeShader.setFloat("linear", 0.07f);
+		mazeShader.setFloat("quadratic", 0.017f);
 		mazeShader.setVec3("objectColor", 0.19f, 0.34f, 0.30f);
 		mazeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(cubeVAO);
-
+		vector<glm::vec3> lightPositions = getLightPositions();
 		// Draw Cubes
 		for (glm::vec3 cube : cubeLocations)
 		{
+			mazeShader.setVec3("lightPosition", lightPositions[0].x, lightPositions[0].y, lightPositions[0].z);
+			mazeShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cube);
 			mazeShader.setMat4("model", model);
@@ -284,13 +292,10 @@ int main() {
 		glBindVertexArray(0);
 
 		// Draw light
-
-		vector<glm::vec3> lightPositions = getLightPositions();
 		lightShader.use();
 		lightShader.setMat4("projection", projection);
 		lightShader.setMat4("view", view);
 		for (int i = 0; i < lightPositions.size(); i++) {
-			mazeShader.setVec3("lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, lightPositions[i]);
 			model = glm::scale(model, glm::vec3(0.2f));
@@ -406,6 +411,7 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 
 vector<glm::vec3> getLightPositions() {
 	vector<glm::vec3> positions;
-	positions.push_back(glm::vec3(5.0f, 5.0f, 3.0f));
+	positions.push_back(glm::vec3(5.0f, 1.0f, 5.0f));
+	positions.push_back(glm::vec3(20.0f, 0.0f, 20.0f));
 	return positions;
 }

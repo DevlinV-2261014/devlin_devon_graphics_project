@@ -269,9 +269,9 @@ int main() {
 		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		mazeShader.setMat4("projection", projection);
 		// Apply Light
-		mazeShader.setFloat("constant", 1.0f);
-		mazeShader.setFloat("linear", 0.07f);
-		mazeShader.setFloat("quadratic", 0.017f);
+		mazeShader.setFloat("light.constant", 1.0f);
+		mazeShader.setFloat("light.linear", 0.09f);
+		mazeShader.setFloat("light.quadratic", 0.032f);
 		mazeShader.setVec3("objectColor", 0.19f, 0.34f, 0.30f);
 		mazeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
@@ -282,7 +282,7 @@ int main() {
 		// Draw Cubes
 		for (glm::vec3 cube : cubeLocations)
 		{
-			mazeShader.setVec3("lightPosition", lightPositions[0].x, lightPositions[0].y, lightPositions[0].z);
+			mazeShader.setVec3("light.lightPosition", lightPositions[0].x, lightPositions[0].y, lightPositions[0].z);
 			mazeShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cube);
@@ -411,7 +411,7 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 
 vector<glm::vec3> getLightPositions() {
 	vector<glm::vec3> positions;
-	positions.push_back(glm::vec3(5.0f, 1.0f, 5.0f));
+	positions.push_back(glm::vec3(15.0f, 2.0f, 15.0f));
 	positions.push_back(glm::vec3(20.0f, 0.0f, 20.0f));
 	return positions;
 }

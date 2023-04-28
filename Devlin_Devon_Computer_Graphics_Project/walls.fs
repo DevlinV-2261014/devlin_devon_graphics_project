@@ -11,39 +11,55 @@ uniform vec3 objectColor;
 uniform vec3 lightColor;
 uniform vec3 viewPosition;
 
-uniform float constant;
-uniform float linear;
-uniform float quadratic;
+struct PointLight {
+    vec3 lightPosition;
+    
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+uniform PointLight light;
+
+vec3 calculateLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float ambientStrength, float specularStrength, vec3 oColor, vec3 lColor);
 
 void main()
 {
-    // Ambient Light
+    // Declare variables
     float ambientStrength = 0.5;
-    vec3 ambient = ambientStrength * lightColor;
-
-    // Diffuse Light
+    float specularStrength = 1.0;
     vec3 norm = normalize(Normal);
-    vec3 lightDirection = normalize(lightPosition - FragPosition);
-    float diff = max(dot(norm, lightDirection), 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 viewDirection = normalize(viewPosition - FragPosition);
+
+    // Calculate result
+    vec3 result = calculateLight(light, norm, FragPosition, viewDirection, ambientStrength, specularStrength, objectColor, lightColor);
+
+    // Set color
+    FragColor = texture(texture1, TexCoord) * vec4(result, 1.0);
+}
+
+vec3 calculateLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float ambientStrength, float specularStrength, vec3 oColor, vec3 lColor){
+   // Ambient Light
+   vec3 ambient = ambientStrength * lColor;
+
+   // Diffuse Light
+    vec3 lightDirection = normalize(lightPosition - fragPos);
+    float diff = max(dot(normal, lightDirection), 0.0);
+    vec3 diffuse = diff * lColor;
 
     // Specualar Light
-    float specularStrength = 1.0;
-    vec3 viewDirection = normalize(viewPosition - FragPosition);
-    vec3 reflectDir = reflect(-lightDirection, norm);
-    float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * spec * lightColor;
+    vec3 reflectDir = reflect(-lightDirection, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * lColor;
 
     // Attenuation
-    float distance = length(lightPosition - FragPosition);
-    float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+    float distance = length(light.lightPosition - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
     //ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
 
-    // Grab everything and put it all together
-    vec3 result = (ambient + diffuse + specular) * objectColor;
-
-    FragColor = texture(texture1, TexCoord) * vec4(result, 1.0);
+    // Put it all together
+    return (ambient + diffuse + specular) * oColor;;
 }

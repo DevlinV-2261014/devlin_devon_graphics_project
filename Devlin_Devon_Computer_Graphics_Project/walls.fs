@@ -19,6 +19,7 @@ struct PointLight {
     float quadratic;
 };
 
+// Must be the same as getLightPositions().size() in Main.cpp
 #define POINT_LIGHTS 4
 uniform PointLight lights[POINT_LIGHTS];
 

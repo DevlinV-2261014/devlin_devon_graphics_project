@@ -276,6 +276,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(cubeVAO);
 
+		// Set light sources in the shader
 		vector<glm::vec3> lightPositions = getLightPositions();
 		for (int i = 0; i < lightPositions.size(); i++) {
 			mazeShader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
@@ -295,7 +296,7 @@ int main() {
 		}
 		glBindVertexArray(0);
 
-		// Draw light
+		// Draw light NOT REALLY NEED IT, BUT I'M KEEPING IT FOR NOW
 		/*lightShader.use();
 		lightShader.setMat4("projection", projection);
 		lightShader.setMat4("view", view);
@@ -327,6 +328,7 @@ int main() {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+	// Delete buffers
 	glDeleteVertexArrays(1, &cubeVAO);
 	glDeleteBuffers(1, &cubeVBO);
 	glDeleteVertexArrays(1, &skyboxVAO);
@@ -362,6 +364,7 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
+	// I just added this to see my coordinates
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 		cout << cameraPosition.x << " X -> " << cameraPosition.z << " Z";
 	}
@@ -423,8 +426,5 @@ vector<glm::vec3> getLightPositions() {
 	positions.push_back(glm::vec3(7.0f, 1.0f, 25.0f));
 	positions.push_back(glm::vec3(25.0f, 1.0f, 2.0f));
 
-	/*positions.push_back(glm::vec3(5.0f, 3.0f, 15.0f));
-	positions.push_back(glm::vec3(15.0f, 3.0f, 15.0f));
-	positions.push_back(glm::vec3(25.0f, 3.0f, 15.0f));*/
 	return positions;
 }

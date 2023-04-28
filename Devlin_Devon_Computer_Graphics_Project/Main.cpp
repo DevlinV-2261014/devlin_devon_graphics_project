@@ -361,7 +361,7 @@ void processInput(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		// If this one is uncommented, flying is enabled
-		cameraPosition += cameraSpeed * cameraFront;
+		cameraPosition -= cameraSpeed * cameraFront;
 		// Only change X and Z to prevent flying
 		/*cameraPosition.x -= cameraSpeed * cameraFront.x;
 		cameraPosition.z -= cameraSpeed * cameraFront.z;*/

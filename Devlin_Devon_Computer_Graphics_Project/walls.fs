@@ -19,20 +19,26 @@ struct PointLight {
     float quadratic;
 };
 
-uniform PointLight light;
+#define POINT_LIGHTS 4
+uniform PointLight lights[POINT_LIGHTS];
 
 vec3 calculateLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float ambientStrength, float specularStrength, vec3 oColor, vec3 lColor);
 
 void main()
 {
     // Declare variables
-    float ambientStrength = 0.5;
+    float ambientStrength = 0.12;
     float specularStrength = 1.0;
     vec3 norm = normalize(Normal);
     vec3 viewDirection = normalize(viewPosition - FragPosition);
 
-    // Calculate result
-    vec3 result = calculateLight(light, norm, FragPosition, viewDirection, ambientStrength, specularStrength, objectColor, lightColor);
+    // Calculate the first one so result is not empty
+    vec3 result = calculateLight(lights[0], norm, FragPosition, viewDirection, ambientStrength, specularStrength, objectColor, lightColor);
+
+    // Add every light calculation to the result
+    for (int i = 1; i < POINT_LIGHTS; i++) {
+        result += calculateLight(lights[i], norm, FragPosition, viewDirection, ambientStrength, specularStrength, objectColor, lightColor);
+    }
 
     // Set color
     FragColor = texture(texture1, TexCoord) * vec4(result, 1.0);

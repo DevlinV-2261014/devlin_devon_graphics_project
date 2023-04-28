@@ -353,10 +353,18 @@ void processInput(GLFWwindow* window)
 
 	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		// If this one is uncommented, flying is enabled
 		cameraPosition += cameraSpeed * cameraFront;
+		// Only change X and Z to prevent flying
+		/*cameraPosition.x +=  cameraSpeed * cameraFront.x;
+		cameraPosition.z += cameraSpeed * cameraFront.z;*/
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		cameraPosition -= cameraSpeed * cameraFront;
+		// If this one is uncommented, flying is enabled
+		cameraPosition += cameraSpeed * cameraFront;
+		// Only change X and Z to prevent flying
+		/*cameraPosition.x -= cameraSpeed * cameraFront.x;
+		cameraPosition.z -= cameraSpeed * cameraFront.z;*/
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;

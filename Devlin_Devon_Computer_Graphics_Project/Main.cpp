@@ -243,7 +243,7 @@ int main() {
 	unsigned int skyboxTexture = createCubemap(skyboxFaces);
 
 	// Flashlight
-	Model flashLight("Flashlight.obj");
+	Model flashLight("linterna.obj");
 
 	// Use the shaders
 	mazeShader.use();
@@ -298,9 +298,10 @@ int main() {
 			mazeShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+		// Just draw the light for now with the same shader
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 3.0f, 0.0f)); // translate it down so it's at the center of the scene
-		model = glm::scale(model, glm::vec3(5.0f, 5.0f, 5.0f));	// it's a bit too big for our scene, so scale it down
+		model = glm::translate(model, glm::vec3(1.0f, 3.0f, 1.0f)); // translate it down so it's at the center of the scene
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
 		mazeShader.setMat4("model", model);
 		flashLight.Draw(mazeShader);
 
@@ -318,7 +319,6 @@ int main() {
 			glBindVertexArray(lightVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}*/
-
 
 		// Draw Skybox
 		glDepthFunc(GL_LEQUAL);

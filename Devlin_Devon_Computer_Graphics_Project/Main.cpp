@@ -13,6 +13,8 @@
 #include "Shader.h"
 #include "TextureHandler.h"
 #include "MazeGen.h"
+#include "Model.h"
+#include "SpawnLocator.h"
 
 using namespace std;
 
@@ -22,50 +24,52 @@ void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
 vector<glm::vec3> getLightPositions();
+void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
+int setToValueIfInvalid(int value, int check, char operation, int newValue);
 
 // Cube vertices
 float cubeVertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
 
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
 
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, -1.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f, -1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, -1.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
 
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f
+		-0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 };
 
 float skyboxVertices[] = {
@@ -118,7 +122,7 @@ const unsigned int SCREEN_WIDTH = 1000;
 const unsigned int SCREEN_HEIGHT = 800;
 
 // Camera settings
-glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPosition;
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -159,6 +163,8 @@ int main() {
 		}
 	}
 
+	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
+
 	// Initialize the window
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -191,6 +197,7 @@ int main() {
 
 	// Shaders for the maze
 	Shader mazeShader("walls.vs", "walls.fs");
+	Shader flashLightShader("walls.vs", "walls.fs");
 	Shader skyboxShader("skybox.vs", "skybox.fs");
 	Shader lightShader("light.vs", "light.fs");
 
@@ -208,10 +215,10 @@ int main() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	// Texture coords
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 	// Lighting
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
 	// Wall textures
@@ -241,11 +248,22 @@ int main() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	unsigned int skyboxTexture = createCubemap(skyboxFaces);
 
+	// Flashlight
+	Model flashLight("linterna.obj");
+
 	// Use the shaders
 	mazeShader.use();
 	mazeShader.setInt("wallTexture", 0);
 	skyboxShader.use();
 	skyboxShader.setInt("skybox", 0);
+
+	// Position the flashlight close to the player
+	int minX{ setToValueIfInvalid(cameraPosition.x - 3, 0, '<', 0) };
+	int maxX{ setToValueIfInvalid(cameraPosition.x + 3, highestX, '>', highestX) };
+	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
+	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
+
+	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))
@@ -278,12 +296,7 @@ int main() {
 
 		// Set light sources in the shader
 		vector<glm::vec3> lightPositions = getLightPositions();
-		for (int i = 0; i < lightPositions.size(); i++) {
-			mazeShader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
-			mazeShader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
-			mazeShader.setFloat("lights[" + to_string(i) + "].linear", 0.14f);
-			mazeShader.setFloat("lights[" + to_string(i) + "].quadratic", 0.07f);
-		}
+		setLightPositionsForShader(lightPositions, mazeShader);
 
 		// Draw Cubes
 		for (glm::vec3 cube : cubeLocations)
@@ -296,6 +309,19 @@ int main() {
 		}
 		glBindVertexArray(0);
 
+		// FLASH LIGHT
+		setLightPositionsForShader(lightPositions, flashLightShader);
+		flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
+		flashLightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		flashLightShader.setMat4("view", view);
+		flashLightShader.setMat4("projection", projection);
+		flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, flashLightSpawn);
+		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		flashLightShader.setMat4("model", model);
+		flashLight.Draw(flashLightShader);
+
 		// Draw light NOT REALLY NEED IT, BUT I'M KEEPING IT FOR NOW
 		/*lightShader.use();
 		lightShader.setMat4("projection", projection);
@@ -304,11 +330,10 @@ int main() {
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, lightPositions[i]);
 			model = glm::scale(model, glm::vec3(0.2f));
-			
+
 			glBindVertexArray(lightVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}*/
-
 
 		// Draw Skybox
 		glDepthFunc(GL_LEQUAL);
@@ -435,4 +460,31 @@ vector<glm::vec3> getLightPositions() {
 	positions.push_back(glm::vec3(25.0f, 1.0f, 2.0f));
 
 	return positions;
+}
+
+void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader) {
+	shader.use();
+	for (int i = 0; i < lightPositions.size(); i++) {
+		shader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
+		shader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
+		shader.setFloat("lights[" + to_string(i) + "].linear", 0.14f);
+		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.07f);
+	}
+}
+
+// Reset a value when it is invalid (out of the maze)
+int setToValueIfInvalid(int value, int check, char operation, int newValue) {
+	if (operation == '>') {
+		if (value > check) {
+			return newValue;
+		}
+		return value;
+	}
+	else if (operation == '<') {
+		if (value < check) {
+			return newValue;
+		}
+		return value;
+	}
+	return value;
 }

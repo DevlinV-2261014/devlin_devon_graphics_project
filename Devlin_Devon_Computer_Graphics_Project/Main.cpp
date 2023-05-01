@@ -163,7 +163,7 @@ int main() {
 		}
 	}
 
-	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ);
+	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
 
 	// Initialize the window
 	glfwInit();
@@ -263,7 +263,7 @@ int main() {
 	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
 	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
 
-	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ);
+	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))

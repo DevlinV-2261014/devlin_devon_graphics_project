@@ -14,6 +14,7 @@
 #include "TextureHandler.h"
 #include "MazeGen.h"
 #include "Model.h"
+#include "SpawnLocator.h"
 
 using namespace std;
 
@@ -24,6 +25,7 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
 vector<glm::vec3> getLightPositions();
 void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
+int setToValueIfInvalid(int value, int check, char operation, int newValue);
 
 // Cube vertices
 float cubeVertices[] = {
@@ -120,7 +122,7 @@ const unsigned int SCREEN_WIDTH = 1000;
 const unsigned int SCREEN_HEIGHT = 800;
 
 // Camera settings
-glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPosition;
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -160,6 +162,8 @@ int main() {
 			cubeLocations.push_back(glm::vec3(i, -1, j));
 		}
 	}
+
+	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ);
 
 	// Initialize the window
 	glfwInit();
@@ -253,6 +257,14 @@ int main() {
 	skyboxShader.use();
 	skyboxShader.setInt("skybox", 0);
 
+	// Position the flashlight close to the player
+	int minX{ setToValueIfInvalid(cameraPosition.x - 3, 0, '<', 0) };
+	int maxX{ setToValueIfInvalid(cameraPosition.x + 3, highestX, '>', highestX) };
+	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
+	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
+
+	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ);
+
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -305,7 +317,7 @@ int main() {
 		flashLightShader.setMat4("projection", projection);
 		flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::translate(model, flashLightSpawn);
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		flashLightShader.setMat4("model", model);
 		flashLight.Draw(flashLightShader);
@@ -458,4 +470,21 @@ void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader)
 		shader.setFloat("lights[" + to_string(i) + "].linear", 0.14f);
 		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.07f);
 	}
+}
+
+// Reset a value when it is invalid (out of the maze)
+int setToValueIfInvalid(int value, int check, char operation, int newValue) {
+	if (operation == '>') {
+		if (value > check) {
+			return newValue;
+		}
+		return value;
+	}
+	else if (operation == '<') {
+		if (value < check) {
+			return newValue;
+		}
+		return value;
+	}
+	return value;
 }

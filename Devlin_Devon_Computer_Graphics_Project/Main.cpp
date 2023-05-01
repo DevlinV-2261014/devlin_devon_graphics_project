@@ -23,6 +23,7 @@ void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
 vector<glm::vec3> getLightPositions();
+void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
 
 // Cube vertices
 float cubeVertices[] = {
@@ -192,6 +193,7 @@ int main() {
 
 	// Shaders for the maze
 	Shader mazeShader("walls.vs", "walls.fs");
+	Shader flashLightShader("walls.vs", "walls.fs");
 	Shader skyboxShader("skybox.vs", "skybox.fs");
 	Shader lightShader("light.vs", "light.fs");
 
@@ -282,12 +284,7 @@ int main() {
 
 		// Set light sources in the shader
 		vector<glm::vec3> lightPositions = getLightPositions();
-		for (int i = 0; i < lightPositions.size(); i++) {
-			mazeShader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
-			mazeShader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
-			mazeShader.setFloat("lights[" + to_string(i) + "].linear", 0.14f);
-			mazeShader.setFloat("lights[" + to_string(i) + "].quadratic", 0.07f);
-		}
+		setLightPositionsForShader(lightPositions, mazeShader);
 
 		// Draw Cubes
 		for (glm::vec3 cube : cubeLocations)
@@ -298,14 +295,20 @@ int main() {
 			mazeShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-		// Just draw the light for now with the same shader
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(1.0f, 3.0f, 1.0f)); // translate it down so it's at the center of the scene
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-		mazeShader.setMat4("model", model);
-		flashLight.Draw(mazeShader);
-
 		glBindVertexArray(0);
+
+		// FLASH LIGHT
+		setLightPositionsForShader(lightPositions, flashLightShader);
+		flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
+		flashLightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		flashLightShader.setMat4("view", view);
+		flashLightShader.setMat4("projection", projection);
+		flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		flashLightShader.setMat4("model", model);
+		flashLight.Draw(flashLightShader);
 
 		// Draw light NOT REALLY NEED IT, BUT I'M KEEPING IT FOR NOW
 		/*lightShader.use();
@@ -445,4 +448,14 @@ vector<glm::vec3> getLightPositions() {
 	positions.push_back(glm::vec3(25.0f, 1.0f, 2.0f));
 
 	return positions;
+}
+
+void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader) {
+	shader.use();
+	for (int i = 0; i < lightPositions.size(); i++) {
+		shader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
+		shader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
+		shader.setFloat("lights[" + to_string(i) + "].linear", 0.14f);
+		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.07f);
+	}
 }

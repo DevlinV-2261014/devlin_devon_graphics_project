@@ -131,7 +131,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
         if (!skip)
         {
             Texture texture;
-            texture.id = createTexture("FlashlightTexture.jpg");
+            texture.id = createTexture(str.C_Str());
             texture.type = typeName;
             texture.path = str.C_Str();
             textures.push_back(texture);
@@ -139,17 +139,4 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
         }
     }
     return textures;
-}
-
-std::vector<Texture> Model::loadTexture(aiMaterial* mat, aiTextureType type, std::string typeName) {
-	std::vector<Texture> textures;
-	for (int i = 0; i < mat->GetTextureCount(type); i++) {
-		aiString string;
-		mat->GetTexture(type, i, &string);
-		Texture t;
-		t.id = createTexture(this->directory);
-		t.type = typeName;
-		textures.push_back(t);
-	}
-	return textures;
 }

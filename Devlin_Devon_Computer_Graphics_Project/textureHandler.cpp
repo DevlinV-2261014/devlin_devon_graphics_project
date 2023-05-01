@@ -24,14 +24,14 @@ unsigned int createTexture(string image)
 	int height;
 	int channels;
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char* data = stbi_load("wall.png", &width, &height, &channels, 0);
+	unsigned char* data = stbi_load(image.c_str(), &width, &height, &channels, 0);
 
 	if (data) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
-		cout << "Cannot load the texture for the walls!" << endl;
+		cout << "Cannot load texture " << image.c_str() << endl;
 	}
 
 	stbi_image_free(data);

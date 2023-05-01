@@ -9,3 +9,5 @@ Ks 0.8 0.8 0.8
 d 1
 illum 2
 map_Kd FlashlightTexture.jpg
+map_Bump FlashlightTexture_NORMAL.jpg
+map_Ks FlashlightTexture_SPECULAR.jpg

@@ -147,7 +147,7 @@ int main() {
 
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
-	
+
 
 	// Floor
 	// Find the highest x and Z to see where the floor should end.
@@ -301,7 +301,7 @@ int main() {
 				jumpEnd = true;
 			}
 		}
-		
+
 		// If we reached the jump height and are descending
 		if (jumpEnd) {
 			// Check if we have not landed yet
@@ -332,7 +332,7 @@ int main() {
 		vector<glm::vec3> lightPositions = getLightPositions();
 		setLightPositionsForShader(lightPositions, mazeShader);
 
-		
+
 		// INSTANCING: a lot of PLAGIAAT
 		// transformation matrices
 		glm::mat4* modelMats = new glm::mat4[mazeSize];
@@ -369,20 +369,15 @@ int main() {
 
 			glBindVertexArray(0);
 		}
-		
-		
+
+
 		// draw cubes for the maze
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(cubeVAO);
-		for (glm::vec3 cube : cubeLocations)
-		{
-			glBindVertexArray(cubeVAO);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 36, mazeSize);
-			glBindVertexArray(0);
-		}
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, mazeSize);
+		glBindVertexArray(0);
 
-		
 		// FLASH LIGHT
 		flashLightShader.use();
 		setLightPositionsForShader(lightPositions, flashLightShader);
@@ -411,7 +406,7 @@ int main() {
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
 
-		
+
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -464,7 +459,7 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		// Check if the player is not already jumping or comming down
 		if (&jumping && !jumpEnd)
-		jumping = true;
+			jumping = true;
 		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	// I just added this to see my coordinates

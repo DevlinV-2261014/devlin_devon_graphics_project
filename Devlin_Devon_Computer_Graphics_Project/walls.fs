@@ -27,7 +27,7 @@ vec3 calculateLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, f
 void main()
 {
     // Declare variables
-    float ambientStrength = 0.22;
+    float ambientStrength = 0.1;
     float specularStrength = 1.0;
     vec3 norm = normalize(Normal);
     vec3 viewDirection = normalize(viewPosition - FragPosition);

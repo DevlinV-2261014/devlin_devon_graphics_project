@@ -137,6 +137,10 @@ float cameraFov = 45.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+bool jumping{ false };
+bool jumpEnd{ false };
+float jumpHeight{ 1.0f };
+
 int main() {
 	// generate random maze
 	MazeGen(19, 31);
@@ -280,6 +284,32 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// Enable jumping
+		float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+		if (jumping) {
+			// See if we are still in jumping range
+			if (cameraPosition.y < jumpHeight) {
+				cameraPosition += cameraSpeed * cameraUp;
+			}
+			else {
+				// Jump top reached, start the descend
+				jumping = false;
+				jumpEnd = true;
+			}
+		}
+		
+		// If we reached the jump height and are descending
+		if (jumpEnd) {
+			// Check if we have not landed yet
+			if (cameraPosition.y > 0.0f) {
+				cameraPosition -= cameraSpeed * cameraUp;
+			}
+			else {
+				// We landed, end the jump program.
+				jumpEnd = false;
+			}
+		}
+
 		// Bind textures
 		mazeShader.use();
 		glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
@@ -396,6 +426,12 @@ void processInput(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	}
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		// Check if the player is not already jumping or comming down
+		if (&jumping && !jumpEnd)
+		jumping = true;
+		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	// I just added this to see my coordinates
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {

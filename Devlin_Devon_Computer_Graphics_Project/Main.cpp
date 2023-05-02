@@ -18,7 +18,7 @@
 
 using namespace std;
 
-// Function declaradions
+// Function declarations
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
@@ -144,6 +144,9 @@ int main() {
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
 
+	// size of maze itself
+	int mazeSize = cubeLocations.size();
+	
 	// Floor
 	// Find the highest x and Z to see where the floor should end.
 	int highestX = cubeLocations[0].x;
@@ -197,6 +200,7 @@ int main() {
 
 	// Shaders for the maze
 	Shader mazeShader("walls.vs", "walls.fs");
+	Shader floorShader("floor.vs", "floor.fs");
 	Shader flashLightShader("walls.vs", "walls.fs");
 	Shader skyboxShader("skybox.vs", "skybox.fs");
 	Shader lightShader("light.vs", "light.fs");
@@ -214,6 +218,7 @@ int main() {
 	// position
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
 	// Texture coords
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
@@ -223,6 +228,12 @@ int main() {
 
 	// Wall textures
 	unsigned int wallTexture = createTexture("wall.png");
+
+	// floor textures
+	unsigned int floorTexture = createTexture("water.jpg");
+
+	// flashlight texture
+	unsigned int flashLightTexture = createTexture("wood2.jpg");
 
 	// LIGHTNING
 	unsigned int lightVAO;
@@ -249,11 +260,21 @@ int main() {
 	unsigned int skyboxTexture = createCubemap(skyboxFaces);
 
 	// Flashlight
-	Model flashLight("linterna.obj");
+	Model flashLight("boat.obj");
+
+	// Player object
+	//Model boat("boat.obj");
 
 	// Use the shaders
 	mazeShader.use();
 	mazeShader.setInt("wallTexture", 0);
+
+	flashLightShader.use();
+	flashLightShader.setInt("flashlightShader", 0);
+
+	floorShader.use();
+	floorShader.setInt("floorTexture", 0);
+
 	skyboxShader.use();
 	skyboxShader.setInt("skybox", 0);
 
@@ -280,12 +301,13 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Bind textures
+		// Bind textures for mazeShader
 		mazeShader.use();
 		glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 		mazeShader.setMat4("view", view);
 		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		mazeShader.setMat4("projection", projection);
+
 		// Apply Light
 		mazeShader.setVec3("objectColor", 0.19f, 0.34f, 0.30f);
 		mazeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
@@ -299,15 +321,38 @@ int main() {
 		setLightPositionsForShader(lightPositions, mazeShader);
 
 		// Draw Cubes
+		int f = 0;
 		for (glm::vec3 cube : cubeLocations)
 		{
-			mazeShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cube);
-			mazeShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			if (f > mazeSize) 
+			{
+				// reset active texture
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, floorTexture);
+				glBindVertexArray(cubeVAO);
+
+				// draw
+				floorShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, cube);
+				floorShader.setMat4("model", model);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+			else
+			{
+				mazeShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, cube);
+				mazeShader.setMat4("model", model);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}			
+			f++;
 		}
 		glBindVertexArray(0);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, flashLightTexture);
+		glBindVertexArray(cubeVAO);
 
 		// FLASH LIGHT
 		setLightPositionsForShader(lightPositions, flashLightShader);
@@ -458,6 +503,10 @@ vector<glm::vec3> getLightPositions() {
 	positions.push_back(glm::vec3(15.0f, 1.0f, 15.0f));
 	positions.push_back(glm::vec3(7.0f, 1.0f, 25.0f));
 	positions.push_back(glm::vec3(25.0f, 1.0f, 2.0f));
+	positions.push_back(glm::vec3(5.0f, 1.0f, 2.0f));
+	positions.push_back(glm::vec3(20.0f, 1.0f, 15.0f));
+	positions.push_back(glm::vec3(10.0f, 1.0f, 25.0f));
+	positions.push_back(glm::vec3(12.0f, 1.0f, 2.0f));
 
 	return positions;
 }
@@ -467,8 +516,8 @@ void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader)
 	for (int i = 0; i < lightPositions.size(); i++) {
 		shader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
 		shader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
-		shader.setFloat("lights[" + to_string(i) + "].linear", 0.14f);
-		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.07f);
+		shader.setFloat("lights[" + to_string(i) + "].linear", 0.0007f);
+		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.0002f);
 	}
 }
 

@@ -458,8 +458,8 @@ void processInput(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		// Check if the player is not already jumping or comming down
-		if (&jumping && !jumpEnd)
-			jumping = true;
+		if (!jumping && !jumpEnd)
+		jumping = true;
 		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	// I just added this to see my coordinates

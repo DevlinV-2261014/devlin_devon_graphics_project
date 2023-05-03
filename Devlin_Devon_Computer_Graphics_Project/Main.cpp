@@ -137,6 +137,7 @@ float cameraFov = 45.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+bool enableFlight{ false };
 bool jumping{ false };
 bool jumpEnd{ false };
 float jumpHeight{ 1.0f };
@@ -437,18 +438,26 @@ void processInput(GLFWwindow* window)
 
 	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		// If this one is uncommented, flying is enabled
-		cameraPosition += cameraSpeed * cameraFront;
-		// Only change X and Z to prevent flying
-		/*cameraPosition.x +=  cameraSpeed * cameraFront.x;
-		cameraPosition.z += cameraSpeed * cameraFront.z;*/
+		// If you enabled flying
+		if (enableFlight) {
+			cameraPosition += cameraSpeed * cameraFront;
+		}
+		else {
+			// Only change X and Z to prevent flying
+			cameraPosition.x += cameraSpeed * cameraFront.x;
+			cameraPosition.z += cameraSpeed * cameraFront.z;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		// If this one is uncommented, flying is enabled
-		cameraPosition -= cameraSpeed * cameraFront;
-		// Only change X and Z to prevent flying
-		/*cameraPosition.x -= cameraSpeed * cameraFront.x;
-		cameraPosition.z -= cameraSpeed * cameraFront.z;*/
+		// If you enabled flying
+		if (enableFlight) {
+			cameraPosition -= cameraSpeed * cameraFront;
+		}
+		else {
+			// Only change X and Z to prevent flying
+			cameraPosition.x -= cameraSpeed * cameraFront.x;
+			cameraPosition.z -= cameraSpeed * cameraFront.z;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
@@ -456,14 +465,18 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
+	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+		// The old switcheroo (if you press N and C together)
+		enableFlight = !enableFlight;
+	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		// Check if the player is not already jumping or comming down
 		if (!jumping && !jumpEnd)
-		jumping = true;
+			jumping = true;
 		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	// I just added this to see my coordinates
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
 		cout << cameraPosition.x << " X -> " << cameraPosition.z << " Z";
 	}
 }

@@ -417,7 +417,6 @@ int main() {
 		glBindVertexArray(cubeVAO);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, mazeSize);
 
-
 		// floor
 		unsigned int buffer1;
 		glGenBuffers(1, &buffer1);

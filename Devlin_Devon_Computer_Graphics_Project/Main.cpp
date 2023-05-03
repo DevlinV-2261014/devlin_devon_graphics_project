@@ -149,6 +149,9 @@ int main() {
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
 
+	// calculate size of the actual maze to use later on
+	int mazeSize = cubeLocations.size();
+
 	// Floor
 	// Find the highest x and Z to see where the floor should end.
 	int highestX = cubeLocations[0].x;
@@ -168,8 +171,10 @@ int main() {
 		}
 	}
 
-	// calculate Maze Size to use later on
-	int mazeSize = cubeLocations.size();
+	// calculate floor size
+	int floorSize = cubeLocations.size() - mazeSize;
+
+	
 
 	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
 
@@ -207,6 +212,7 @@ int main() {
 	Shader mazeShader("walls.vs", "walls.fs");
 	Shader floorShader("floor.vs", "floor.fs");
 	Shader flashLightShader("flashlight.vs", "flashlight.fs");
+	Shader boatShader("boat.vs", "boat.fs");
 	Shader skyboxShader("skybox.vs", "skybox.fs");
 	Shader lightShader("light.vs", "light.fs");
 
@@ -238,7 +244,10 @@ int main() {
 	unsigned int floorTexture = createTexture("water.jpg");
 
 	// flashlight texture
-	unsigned int flashLightTexture = createTexture("wood2.jpg");
+	unsigned int flashLightTexture = createTexture("wall.png");
+
+	// boat texture
+	unsigned int boatTexture = createTexture("wood2.jpg");
 
 	// LIGHTNING
 	unsigned int lightVAO;
@@ -265,7 +274,10 @@ int main() {
 	unsigned int skyboxTexture = createCubemap(skyboxFaces);
 
 	// Flashlight
-	Model flashLight("boat.obj");
+	Model flashLight("Linterna.obj");
+
+	// Boat
+	Model boat("boat.obj");
 
 	// Player object
 	//Model boat("boat.obj");
@@ -276,6 +288,9 @@ int main() {
 
 	flashLightShader.use();
 	flashLightShader.setInt("flashlightShader", 0);
+
+	boatShader.use();
+	boatShader.setInt("boatShader", 0);
 
 	floorShader.use();
 	floorShader.setInt("floorTexture", 0);
@@ -351,51 +366,30 @@ int main() {
 		vector<glm::vec3> lightPositions = getLightPositions();
 		setLightPositionsForShader(lightPositions, mazeShader);
 
-		/*
-		// Draw Cubes
-		int f = 0;
-		for (glm::vec3 cube : cubeLocations)
-		{
-			if (f > mazeSize) 
-			{
-				// reset active texture
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, floorTexture);
-				glBindVertexArray(cubeVAO);
-
-				// draw
-				floorShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, cube);
-				floorShader.setMat4("model", model);
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-			}
-			else
-			{
-				mazeShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, cube);
-				mazeShader.setMat4("model", model);
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-			}			
-			f++;
-		*/
-
 		// INSTANCING: a lot of PLAGIAAT
 		// transformation matrices
-		glm::mat4* modelMats = new glm::mat4[mazeSize];
+		glm::mat4* modelMatsMaze = new glm::mat4[mazeSize];
 		for (int i = 0; i < mazeSize; i++)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubeLocations[i]);
-			modelMats[i] = model;
+			modelMatsMaze[i] = model;
 		}
 
-		// configure vertex buffer object
+		glm::mat4* modelMatsFloor = new glm::mat4[floorSize];
+		for (int i = 0; i < floorSize; i++)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubeLocations[mazeSize + i]);
+			modelMatsFloor[i] = model;
+		}
+
+		// configure vertex buffer object (for both floor and maze)
+		// maze
 		unsigned int buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		glBufferData(GL_ARRAY_BUFFER, mazeSize * sizeof(glm::mat4), &modelMats[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, mazeSize * sizeof(glm::mat4), &modelMatsMaze[0], GL_STATIC_DRAW);
 		glBindVertexArray(cubeVAO);
 		for (unsigned int i = 0; i < mazeSize; i++)
 		{
@@ -417,20 +411,49 @@ int main() {
 
 			glBindVertexArray(0);
 		}
-
-
 		// draw cubes for the maze
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(cubeVAO);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, mazeSize);
-		glBindVertexArray(0);
 
+
+		// floor
+		unsigned int buffer1;
+		glGenBuffers(1, &buffer1);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer1);
+		glBufferData(GL_ARRAY_BUFFER, floorSize * sizeof(glm::mat4), &modelMatsFloor[0], GL_STATIC_DRAW);
+		glBindVertexArray(cubeVAO);
+		for (unsigned int i = 0; i < floorSize; i++)
+		{
+			// vertex characteristics
+			std::size_t vec4Size = sizeof(glm::vec4);
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+			glEnableVertexAttribArray(4);
+			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+			glEnableVertexAttribArray(5);
+			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+			glEnableVertexAttribArray(6);
+			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+			glVertexAttribDivisor(3, 1);
+			glVertexAttribDivisor(4, 1);
+			glVertexAttribDivisor(5, 1);
+			glVertexAttribDivisor(6, 1);
+
+			glBindVertexArray(0);
+		}
+		// draw cubes for the floor
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, floorTexture);
+		glBindVertexArray(cubeVAO);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, floorSize);
+
+		// FLASH LIGHT
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, flashLightTexture);
 		glBindVertexArray(cubeVAO);
-
-		// FLASH LIGHT
 		flashLightShader.use();
 		setLightPositionsForShader(lightPositions, flashLightShader);
 		flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
@@ -443,6 +466,23 @@ int main() {
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		flashLightShader.setMat4("model", model);
 		flashLight.Draw(flashLightShader);
+
+		// boat
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, boatTexture);
+		glBindVertexArray(cubeVAO);
+		boatShader.use();
+		setLightPositionsForShader(lightPositions, boatShader);
+		boatShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
+		boatShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		boatShader.setMat4("view", view);
+		boatShader.setMat4("projection", projection);
+		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, flashLightSpawn);
+		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		boatShader.setMat4("model", model);
+		boat.Draw(boatShader);
 
 		// Draw Skybox
 		glDepthFunc(GL_LEQUAL);
@@ -457,8 +497,6 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
-
-
 
 		// Swap buffers
 		glfwSwapBuffers(window);

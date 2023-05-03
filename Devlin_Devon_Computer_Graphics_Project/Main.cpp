@@ -429,7 +429,7 @@ void processInput(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		// Check if the player is not already jumping or comming down
-		if (&jumping && !jumpEnd)
+		if (!jumping && !jumpEnd)
 		jumping = true;
 		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}

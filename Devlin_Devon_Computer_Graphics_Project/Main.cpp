@@ -137,6 +137,11 @@ float cameraFov = 45.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+bool enableFlight{ false };
+bool jumping{ false };
+bool jumpEnd{ false };
+float jumpHeight{ 1.0f };
+
 int main() {
 	// generate random maze
 	MazeGen(19, 31);
@@ -144,9 +149,6 @@ int main() {
 	// Read the maze file and create positions for each #
 	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
 
-	// size of maze itself
-	int mazeSize = cubeLocations.size();
-	
 	// Floor
 	// Find the highest x and Z to see where the floor should end.
 	int highestX = cubeLocations[0].x;
@@ -165,6 +167,9 @@ int main() {
 			cubeLocations.push_back(glm::vec3(i, -1, j));
 		}
 	}
+
+	// calculate Maze Size to use later on
+	int mazeSize = cubeLocations.size();
 
 	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
 
@@ -201,7 +206,7 @@ int main() {
 	// Shaders for the maze
 	Shader mazeShader("walls.vs", "walls.fs");
 	Shader floorShader("floor.vs", "floor.fs");
-	Shader flashLightShader("walls.vs", "walls.fs");
+	Shader flashLightShader("flashlight.vs", "flashlight.fs");
 	Shader skyboxShader("skybox.vs", "skybox.fs");
 	Shader lightShader("light.vs", "light.fs");
 
@@ -301,7 +306,33 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Bind textures for mazeShader
+		// Enable jumping
+		float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+		if (jumping) {
+			// See if we are still in jumping range
+			if (cameraPosition.y < jumpHeight) {
+				cameraPosition += cameraSpeed * cameraUp;
+			}
+			else {
+				// Jump top reached, start the descend
+				jumping = false;
+				jumpEnd = true;
+			}
+		}
+
+		// If we reached the jump height and are descending
+		if (jumpEnd) {
+			// Check if we have not landed yet
+			if (cameraPosition.y > 0.0f) {
+				cameraPosition -= cameraSpeed * cameraUp;
+			}
+			else {
+				// We landed, end the jump program.
+				jumpEnd = false;
+			}
+		}
+
+		// Bind textures
 		mazeShader.use();
 		glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 		mazeShader.setMat4("view", view);
@@ -320,6 +351,7 @@ int main() {
 		vector<glm::vec3> lightPositions = getLightPositions();
 		setLightPositionsForShader(lightPositions, mazeShader);
 
+		/*
 		// Draw Cubes
 		int f = 0;
 		for (glm::vec3 cube : cubeLocations)
@@ -347,7 +379,51 @@ int main() {
 				glDrawArrays(GL_TRIANGLES, 0, 36);
 			}			
 			f++;
+		*/
+
+		// INSTANCING: a lot of PLAGIAAT
+		// transformation matrices
+		glm::mat4* modelMats = new glm::mat4[mazeSize];
+		for (int i = 0; i < mazeSize; i++)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubeLocations[i]);
+			modelMats[i] = model;
 		}
+
+		// configure vertex buffer object
+		unsigned int buffer;
+		glGenBuffers(1, &buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer);
+		glBufferData(GL_ARRAY_BUFFER, mazeSize * sizeof(glm::mat4), &modelMats[0], GL_STATIC_DRAW);
+		glBindVertexArray(cubeVAO);
+		for (unsigned int i = 0; i < mazeSize; i++)
+		{
+			// vertex characteristics
+			std::size_t vec4Size = sizeof(glm::vec4);
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+			glEnableVertexAttribArray(4);
+			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+			glEnableVertexAttribArray(5);
+			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+			glEnableVertexAttribArray(6);
+			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+			glVertexAttribDivisor(3, 1);
+			glVertexAttribDivisor(4, 1);
+			glVertexAttribDivisor(5, 1);
+			glVertexAttribDivisor(6, 1);
+
+			glBindVertexArray(0);
+		}
+
+
+		// draw cubes for the maze
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, wallTexture);
+		glBindVertexArray(cubeVAO);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, mazeSize);
 		glBindVertexArray(0);
 
 		glActiveTexture(GL_TEXTURE0);
@@ -355,6 +431,7 @@ int main() {
 		glBindVertexArray(cubeVAO);
 
 		// FLASH LIGHT
+		flashLightShader.use();
 		setLightPositionsForShader(lightPositions, flashLightShader);
 		flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
 		flashLightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
@@ -366,19 +443,6 @@ int main() {
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		flashLightShader.setMat4("model", model);
 		flashLight.Draw(flashLightShader);
-
-		// Draw light NOT REALLY NEED IT, BUT I'M KEEPING IT FOR NOW
-		/*lightShader.use();
-		lightShader.setMat4("projection", projection);
-		lightShader.setMat4("view", view);
-		for (int i = 0; i < lightPositions.size(); i++) {
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, lightPositions[i]);
-			model = glm::scale(model, glm::vec3(0.2f));
-
-			glBindVertexArray(lightVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}*/
 
 		// Draw Skybox
 		glDepthFunc(GL_LEQUAL);
@@ -393,6 +457,8 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
+
+
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -423,18 +489,26 @@ void processInput(GLFWwindow* window)
 
 	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		// If this one is uncommented, flying is enabled
-		cameraPosition += cameraSpeed * cameraFront;
-		// Only change X and Z to prevent flying
-		/*cameraPosition.x +=  cameraSpeed * cameraFront.x;
-		cameraPosition.z += cameraSpeed * cameraFront.z;*/
+		// If you enabled flying
+		if (enableFlight) {
+			cameraPosition += cameraSpeed * cameraFront;
+		}
+		else {
+			// Only change X and Z to prevent flying
+			cameraPosition.x += cameraSpeed * cameraFront.x;
+			cameraPosition.z += cameraSpeed * cameraFront.z;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		// If this one is uncommented, flying is enabled
-		cameraPosition -= cameraSpeed * cameraFront;
-		// Only change X and Z to prevent flying
-		/*cameraPosition.x -= cameraSpeed * cameraFront.x;
-		cameraPosition.z -= cameraSpeed * cameraFront.z;*/
+		// If you enabled flying
+		if (enableFlight) {
+			cameraPosition -= cameraSpeed * cameraFront;
+		}
+		else {
+			// Only change X and Z to prevent flying
+			cameraPosition.x -= cameraSpeed * cameraFront.x;
+			cameraPosition.z -= cameraSpeed * cameraFront.z;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
@@ -442,8 +516,18 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
+	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+		// The old switcheroo (if you press N and C together)
+		enableFlight = !enableFlight;
+	}
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		// Check if the player is not already jumping or comming down
+		if (!jumping && !jumpEnd)
+			jumping = true;
+		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	}
 	// I just added this to see my coordinates
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
 		cout << cameraPosition.x << " X -> " << cameraPosition.z << " Z";
 	}
 }

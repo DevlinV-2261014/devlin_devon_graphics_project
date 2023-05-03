@@ -42,6 +42,7 @@ unsigned int createCubemap(vector<string> skyBoxFaces) {
 	unsigned int skyBoxId;
 	glGenTextures(1, &skyBoxId);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyBoxId);
+	stbi_set_flip_vertically_on_load(true);
 
 	int width, height, nrChannels;
 	for (unsigned int i = 0; i < skyBoxFaces.size(); i++)

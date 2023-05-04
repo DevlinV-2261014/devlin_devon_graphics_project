@@ -490,18 +490,6 @@ int main() {
 			flModel = glm::scale(flModel, glm::vec3(0.1f, 0.1f, 0.1f));
 			flashLightShader.setMat4("model", flModel);
 			flashLight.Draw(flashLightShader);
-			/*flashLightShader.use();
-			setLightPositionsForShader(lightPositions, flashLightShader);
-			flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
-			flashLightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-			flashLightShader.setMat4("view", view);
-			flashLightShader.setMat4("projection", projection);
-			flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, flashLightSpawn);
-			model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-			flashLightShader.setMat4("model", model);
-			flashLight.Draw(flashLightShader);*/
 		}
 
 		// boat

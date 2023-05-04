@@ -133,6 +133,9 @@ float cameraLastX = SCREEN_WIDTH / 2.0f;
 float cameraLastY = SCREEN_HEIGHT / 2.0f;
 float cameraFov = 45.0f;
 
+// boat position
+glm::vec3 boatSpawn;
+
 // Timings
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -300,7 +303,7 @@ int main() {
 	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
 
 	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
-	glm::vec3 boatSpawn = getSpawnLocation(cubeLocations, minX - 3, maxX + 3, minZ - 3, maxZ + 3, 0.4f);
+	boatSpawn = getSpawnLocation(cubeLocations, minX - 3, maxX + 3, minZ - 3, maxZ + 3, 0.4f);
 
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))
@@ -479,10 +482,6 @@ int main() {
 		model = glm::translate(model, boatSpawn);
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		boatShader.setMat4("model", model);
-
-		//glm::vec3 cameraTar = boatSpawn;
-		//glm::vec3 cameraDir = glm::normalize(cameraPosition - cameraTar);
-		//cameraUp = glm::vec3(0, 1, 0);
 		boat.Draw(boatShader);
 
 		// Draw Skybox
@@ -534,8 +533,8 @@ void processInput(GLFWwindow* window)
 		}
 		else {
 			// Only change X and Z to prevent flying
-			cameraPosition.x += cameraSpeed * cameraFront.x;
-			cameraPosition.z += cameraSpeed * cameraFront.z;
+			boatSpawn.x += cameraSpeed * cameraFront.x;
+			boatSpawn.z += cameraSpeed * cameraFront.z;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
@@ -545,15 +544,15 @@ void processInput(GLFWwindow* window)
 		}
 		else {
 			// Only change X and Z to prevent flying
-			cameraPosition.x -= cameraSpeed * cameraFront.x;
-			cameraPosition.z -= cameraSpeed * cameraFront.z;
+			boatSpawn.x -= cameraSpeed * cameraFront.x;
+			boatSpawn.z -= cameraSpeed * cameraFront.z;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		boatSpawn -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		boatSpawn += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 		// The old switcheroo (if you press N and C together)

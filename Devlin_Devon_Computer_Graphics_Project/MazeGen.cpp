@@ -181,16 +181,32 @@ void saveMaze() {
     // Create and open a text file
     std::ofstream MyFile("maze.txt");
     for (unsigned int a = 0; a < maze_size[1]; a++) {
+        std::string line = "";
         for (unsigned int b = 0; b < maze_size[0]; b++) {
             if (maze[a][b][0]) {
-                MyFile << "##";
+                line += "####";
             }
             else {
-                MyFile << "  ";
+                line += "    ";
             }
         }
-
-        MyFile << std::endl;
+        if (a != 0 && a != maze_size[1] - 1)
+        {
+            MyFile << line;
+            MyFile << std::endl;
+            MyFile << line;
+            MyFile << std::endl;
+            MyFile << line;
+            MyFile << std::endl;
+            MyFile << line;
+            MyFile << std::endl;
+        }
+        else
+        {
+            MyFile << line;
+            MyFile << std::endl;
+        }
+        
     }
 
     MyFile.close();

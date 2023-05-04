@@ -2,8 +2,8 @@
 #include "TextureHandler.h"
 #include <iostream>
 
-Model::Model(std::string path) {
-	loadModel(path);
+Model::Model(glm::vec3 pos) {
+    position = pos;
 }
 
 void Model::Draw(Shader& shader) {
@@ -44,6 +44,12 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
+    float minX = 9999;
+    float maxX = -9999;
+    float minY = 9999;
+    float maxY = -9999;
+    float minZ = 9999;
+    float maxZ = -9999;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -54,6 +60,20 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
         vertex.Position = vector;
+
+        // check for Size.x, Size.y and Size.z
+        if (vector.x < minX)
+            minX = vector.x;
+        if (vector.x > maxX)
+            maxX = vector.x;
+        if (vector.y < minY)
+            minY = vector.y;
+        if (vector.y > maxY)
+            maxY = vector.y;
+        if (vector.z < minZ)
+            minZ = vector.z;
+        if (vector.z > maxZ)
+            maxZ = vector.z;
 
         if (mesh->HasNormals())
         {
@@ -85,6 +105,10 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 
         vertices.push_back(vertex);
     }
+
+    size.x = abs(maxX - minX);
+    size.y = abs(maxY - minY);
+    size.z = abs(maxZ - minZ);
 
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
@@ -140,3 +164,4 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
     }
     return textures;
 }
+

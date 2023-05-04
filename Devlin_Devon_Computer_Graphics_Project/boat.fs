@@ -19,7 +19,7 @@ struct PointLight {
 };
 
 // Must be the same as getLightPositions().size() in Main.cpp
-#define POINT_LIGHTS 8
+#define POINT_LIGHTS 4
 uniform PointLight lights[POINT_LIGHTS];
 
 vec3 calculateLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float ambientStrength, float specularStrength, vec3 oColor, vec3 lColor);
@@ -27,7 +27,7 @@ vec3 calculateLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, f
 void main()
 {
     // Declare variables
-    float ambientStrength = 0.15;
+    float ambientStrength = 0.22;
     float specularStrength = 1.0;
     vec3 norm = normalize(Normal);
     vec3 viewDirection = normalize(viewPosition - FragPosition);

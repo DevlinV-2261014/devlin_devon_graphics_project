@@ -184,14 +184,16 @@ void saveMaze() {
         std::string line = "";
         for (unsigned int b = 0; b < maze_size[0]; b++) {
             if (maze[a][b][0]) {
-                line += "###";
+                line += "####";
             }
             else {
-                line += "   ";
+                line += "    ";
             }
         }
         if (a != 0 && a != maze_size[1] - 1)
         {
+            MyFile << line;
+            MyFile << std::endl;
             MyFile << line;
             MyFile << std::endl;
             MyFile << line;

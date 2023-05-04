@@ -26,6 +26,7 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
 vector<glm::vec3> getLightPositions();
 void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
 int setToValueIfInvalid(int value, int check, char operation, int newValue);
+bool checkCollisions(Model& model, vector<glm::vec3> vertices);
 
 // Cube vertices
 float cubeVertices[] = {
@@ -133,8 +134,9 @@ float cameraLastX = SCREEN_WIDTH / 2.0f;
 float cameraLastY = SCREEN_HEIGHT / 2.0f;
 float cameraFov = 45.0f;
 
-// boat position
+// boat init
 glm::vec3 boatSpawn;
+Model boat(boatSpawn);
 
 // Timings
 float deltaTime = 0.0f;
@@ -145,6 +147,8 @@ bool jumping{ false };
 bool jumpEnd{ false };
 float jumpHeight{ 1.0f };
 
+vector<glm::vec3> wallCubeLocations;
+
 int main() {
 	// generate random maze
 	MazeGen(19, 31);
@@ -154,7 +158,7 @@ int main() {
 
 	// calculate size of the actual maze to use later on
 	int mazeSize = cubeLocations.size();
-
+	
 	// Floor
 	// Find the highest x and Z to see where the floor should end.
 	int highestX = cubeLocations[0].x;
@@ -176,6 +180,12 @@ int main() {
 
 	// calculate floor size
 	int floorSize = cubeLocations.size() - mazeSize;
+
+	// get locations of the walls
+	for (int i = 0; i < mazeSize; i++)
+	{
+		wallCubeLocations.push_back(cubeLocations[i]);
+	}
 
 	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
 
@@ -274,12 +284,6 @@ int main() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	unsigned int skyboxTexture = createCubemap(skyboxFaces);
 
-	// Flashlight
-	Model flashLight("Linterna.obj");
-
-	// Boat
-	Model boat("boat.obj");
-
 	// Use the shaders
 	mazeShader.use();
 	mazeShader.setInt("wallTexture", 0);
@@ -297,13 +301,27 @@ int main() {
 	skyboxShader.setInt("skybox", 0);
 
 	// Position the flashlight close to the player
+	/*
 	int minX{ setToValueIfInvalid(cameraPosition.x - 3, 0, '<', 0) };
 	int maxX{ setToValueIfInvalid(cameraPosition.x + 3, highestX, '>', highestX) };
 	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
 	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
+	*/
+	int minX = cameraPosition.x - 3;
+	int maxX = cameraPosition.x + 3;
+	int minZ = cameraPosition.z - 3;
+	int maxZ = cameraPosition.z + 3;
 
 	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
-	boatSpawn = getSpawnLocation(cubeLocations, minX - 3, maxX + 3, minZ - 3, maxZ + 3, 0.4f);
+	boatSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
+
+	// Flashlight
+	Model flashLight(flashLightSpawn);
+	flashLight.loadModel("Linterna.obj");
+
+	// Boat
+	Model boat(boatSpawn);
+	boat.loadModel("boat.obj");
 
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))
@@ -325,7 +343,7 @@ int main() {
 		if (jumping) {
 			// See if we are still in jumping range
 			if (cameraPosition.y < jumpHeight) {
-				cameraPosition += cameraSpeed * cameraUp;
+				boatSpawn += cameraSpeed * cameraUp;
 			}
 			else {
 				// Jump top reached, start the descend
@@ -337,8 +355,8 @@ int main() {
 		// If we reached the jump height and are descending
 		if (jumpEnd) {
 			// Check if we have not landed yet
-			if (cameraPosition.y > 0.0f) {
-				cameraPosition -= cameraSpeed * cameraUp;
+			if (cameraPosition.y > 0.25f) {
+				boatSpawn -= cameraSpeed * cameraUp;
 			}
 			else {
 				// We landed, end the jump program.
@@ -367,14 +385,6 @@ int main() {
 
 		// INSTANCING: a lot of PLAGIAAT
 		// transformation matrices
-		glm::mat4* modelMatsMaze = new glm::mat4[mazeSize];
-		for (int i = 0; i < mazeSize; i++)
-		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubeLocations[i]);
-			modelMatsMaze[i] = model;
-		}
-
 		glm::mat4* modelMatsFloor = new glm::mat4[floorSize];
 		for (int i = 0; i < floorSize; i++)
 		{
@@ -382,6 +392,14 @@ int main() {
 			model = glm::translate(model, cubeLocations[mazeSize + i]);
 			modelMatsFloor[i] = model;
 		}
+
+		glm::mat4* modelMatsMaze = new glm::mat4[mazeSize];
+		for (int i = 0; i < mazeSize; i++)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubeLocations[i]);
+			modelMatsMaze[i] = model;
+		}		
 
 		// configure vertex buffer object (for both floor and maze)
 		// maze
@@ -410,6 +428,7 @@ int main() {
 
 			glBindVertexArray(0);
 		}
+		
 		// draw cubes for the maze
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
@@ -442,6 +461,7 @@ int main() {
 
 			glBindVertexArray(0);
 		}
+		
 		// draw cubes for the floor
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, floorTexture);
@@ -460,7 +480,7 @@ int main() {
 		flashLightShader.setMat4("projection", projection);
 		flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, flashLightSpawn);
+		model = glm::translate(model, flashLight.position);
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		flashLightShader.setMat4("model", model);
 		flashLight.Draw(flashLightShader);
@@ -475,12 +495,23 @@ int main() {
 		boatShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		boatShader.setMat4("view", view);
 		boatShader.setMat4("projection", projection);
+
+		bool coll = checkCollisions(boat, wallCubeLocations);
+		if (coll == false)
+			boat.position = boatSpawn;
+		else
+			boatSpawn = boat.position;
+
 		// set camera location fixed to boat
-		cameraPosition = boatSpawn + glm::vec3(-0.25f, 0.5f, 0);
+		cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
+
 		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, boatSpawn);
-		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		model = glm::translate(model, boat.position);
+
+		// if you scale the object, make sure to set the object size to the same factor
+		int scaleFactor = 10;
+		model = glm::scale(model, glm::vec3(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f / scaleFactor));
 		boatShader.setMat4("model", model);
 		boat.Draw(boatShader);
 
@@ -525,7 +556,7 @@ void processInput(GLFWwindow* window)
 		glfwSetWindowShouldClose(window, true);
 	}
 
-	float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+	float cameraSpeed = static_cast<float>(1.5 * deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		// If you enabled flying
 		if (enableFlight) {
@@ -537,6 +568,7 @@ void processInput(GLFWwindow* window)
 			boatSpawn.z += cameraSpeed * cameraFront.z;
 		}
 	}
+
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		// If you enabled flying
 		if (enableFlight) {
@@ -658,4 +690,81 @@ int setToValueIfInvalid(int value, int check, char operation, int newValue) {
 		return value;
 	}
 	return value;
+}
+
+bool checkCollisions(Model& model, vector<glm::vec3> vertices)
+{
+	bool axisXCollision;
+	bool axisZCollision;
+	int xScale = 10;
+	int zScale = 7.5;
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		axisXCollision = false;
+		axisZCollision = false;
+
+		glm::vec3 cube = vertices[i];
+		// x axis
+		if (boatSpawn.x - model.size.x / xScale <= cube.x && cube.x - 1 <= boatSpawn.x)
+			axisXCollision = true;
+		// z axis
+		if (boatSpawn.z - model.size.z / zScale <= cube.z && cube.z - 1 <= boatSpawn.z)
+			axisZCollision = true;
+
+		if (axisXCollision && axisZCollision)
+			return true;
+	}
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		axisXCollision = false;
+		axisZCollision = false;
+
+		glm::vec3 cube = vertices[i];
+		// x axis
+		if (boatSpawn.x - model.size.x / xScale >= cube.x && cube.x - 1 >= boatSpawn.x)
+			axisXCollision = true;
+		// z axis
+		if (boatSpawn.z - model.size.z / zScale >= cube.z && cube.z - 1 >= boatSpawn.z)
+			axisZCollision = true;
+
+		if (axisXCollision && axisZCollision)
+			return true;
+	}
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		axisXCollision = false;
+		axisZCollision = false;
+
+		glm::vec3 cube = vertices[i];
+		// x axis
+		if (boatSpawn.x + model.size.x / xScale >= cube.x && cube.x + 1 >= boatSpawn.x)
+			axisXCollision = true;
+		// z axis
+		if (boatSpawn.z + model.size.z / zScale >= cube.z && cube.z + 1 >= boatSpawn.z)
+			axisZCollision = true;
+
+		if (axisXCollision && axisZCollision)
+			return true;
+	}
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		axisXCollision = false;
+		axisZCollision = false;
+
+		glm::vec3 cube = vertices[i];
+		// x axis
+		if (boatSpawn.x + model.size.x / xScale <= cube.x && cube.x + 1 <= boatSpawn.x)
+			axisXCollision = true;
+		// z axis
+		if (boatSpawn.z + model.size.z / zScale <= cube.z && cube.z + 1 <= boatSpawn.z)
+			axisZCollision = true;
+
+		if (axisXCollision && axisZCollision)
+			return true;
+	}
+	return false;
 }

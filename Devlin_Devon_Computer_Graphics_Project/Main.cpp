@@ -174,8 +174,6 @@ int main() {
 	// calculate floor size
 	int floorSize = cubeLocations.size() - mazeSize;
 
-	
-
 	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
 
 	// Initialize the window
@@ -279,9 +277,6 @@ int main() {
 	// Boat
 	Model boat("boat.obj");
 
-	// Player object
-	//Model boat("boat.obj");
-
 	// Use the shaders
 	mazeShader.use();
 	mazeShader.setInt("wallTexture", 0);
@@ -305,6 +300,7 @@ int main() {
 	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
 
 	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
+	glm::vec3 boatSpawn = getSpawnLocation(cubeLocations, minX - 3, maxX + 3, minZ - 3, maxZ + 3, 0.4f);
 
 	// Rendering in loop
 	while (!glfwWindowShouldClose(window))
@@ -476,11 +472,17 @@ int main() {
 		boatShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		boatShader.setMat4("view", view);
 		boatShader.setMat4("projection", projection);
+		// set camera location fixed to boat
+		cameraPosition = boatSpawn + glm::vec3(-0.25f, 0.5f, 0);
 		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, flashLightSpawn);
+		model = glm::translate(model, boatSpawn);
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		boatShader.setMat4("model", model);
+
+		//glm::vec3 cameraTar = boatSpawn;
+		//glm::vec3 cameraDir = glm::normalize(cameraPosition - cameraTar);
+		//cameraUp = glm::vec3(0, 1, 0);
 		boat.Draw(boatShader);
 
 		// Draw Skybox

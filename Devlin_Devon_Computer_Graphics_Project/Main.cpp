@@ -151,6 +151,7 @@ float jumpHeight{ 1.0f };
 // flashlight stuff
 glm::vec3 flashLightSpawn;
 bool playerHasFlashlight{ false };
+bool flashLightOn{ false };
 
 vector<glm::vec3> wallCubeLocations;
 
@@ -311,11 +312,6 @@ int main() {
 	int maxX{ setToValueIfInvalid(cameraPosition.x + 3, highestX, '>', highestX) };
 	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
 	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
-	
-	//int minX = cameraPosition.x - 3;
-	//int maxX = cameraPosition.x + 3;
-	//int minZ = cameraPosition.z - 3;
-	//int maxZ = cameraPosition.z + 3;
 
 	flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 	boatSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
@@ -379,6 +375,14 @@ int main() {
 		// Apply Light
 		mazeShader.setVec3("objectColor", 0.19f, 0.34f, 0.30f);
 		mazeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		mazeShader.setBool("flashLightOn", flashLightOn);
+		if (flashLightOn) {
+			mazeShader.setVec3("flashLight.lightColor", 0.0f, 1.0f, 1.0f);
+			mazeShader.setFloat("flashLight.constant", 1.0f);
+			mazeShader.setFloat("flashLight.linear", 0.35f);
+			mazeShader.setFloat("flashLight.quadratic", 0.44f);
+			mazeShader.setVec3("flashLight.lightPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		}
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
@@ -602,6 +606,13 @@ void processInput(GLFWwindow* window)
 		if (!jumping && !jumpEnd)
 			jumping = true;
 	}
+
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+		if (playerHasFlashlight) {
+			// Switch the light on / off
+			flashLightOn = !flashLightOn;
+		}
+	}
 	// I just added this to see my coordinates
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
 		cout << cameraPosition.x << " X -> " << cameraPosition.z << " Z";
@@ -763,8 +774,8 @@ void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader)
 	for (int i = 0; i < lightPositions.size(); i++) {
 		shader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
 		shader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
-		shader.setFloat("lights[" + to_string(i) + "].linear", 0.045f);
-		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.0075f);
+		shader.setFloat("lights[" + to_string(i) + "].linear", 0.07f);
+		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.017f);
 	}
 }
 

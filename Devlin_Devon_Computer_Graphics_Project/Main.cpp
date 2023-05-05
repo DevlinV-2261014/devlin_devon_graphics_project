@@ -23,9 +23,9 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 vector<glm::vec3> getLightPositions();
 void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
-int setToValueIfInvalid(int value, int check, char operation, int newValue);
 bool checkCollisions(Model& model, vector<glm::vec3> vertices);
 
 // Cube vertices
@@ -147,6 +147,11 @@ bool jumping{ false };
 bool jumpEnd{ false };
 float jumpHeight{ 1.0f };
 
+// flashlight stuff
+glm::vec3 flashLightSpawn;
+bool playerHasFlashlight{ false };
+bool flashLightOn{ false };
+
 vector<glm::vec3> wallCubeLocations;
 
 int main() {
@@ -206,6 +211,7 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	glfwSetCursorPosCallback(window, mouseCalllback);
 	glfwSetScrollCallback(window, scrollCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
 	// Capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -301,18 +307,12 @@ int main() {
 	skyboxShader.setInt("skybox", 0);
 
 	// Position the flashlight close to the player
-	/*
-	int minX{ setToValueIfInvalid(cameraPosition.x - 3, 0, '<', 0) };
-	int maxX{ setToValueIfInvalid(cameraPosition.x + 3, highestX, '>', highestX) };
-	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
-	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
-	*/
 	int minX = cameraPosition.x - 3;
 	int maxX = cameraPosition.x + 3;
 	int minZ = cameraPosition.z - 3;
 	int maxZ = cameraPosition.z + 3;
 
-	glm::vec3 flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
+	flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 	boatSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 
 	// Flashlight
@@ -374,6 +374,14 @@ int main() {
 		// Apply Light
 		mazeShader.setVec3("objectColor", 0.19f, 0.34f, 0.30f);
 		mazeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		mazeShader.setBool("flashLightOn", flashLightOn);
+		if (flashLightOn) {
+			mazeShader.setVec3("flashLight.lightColor", 0.0f, 1.0f, 1.0f);
+			mazeShader.setFloat("flashLight.constant", 1.0f);
+			mazeShader.setFloat("flashLight.linear", 0.35f);
+			mazeShader.setFloat("flashLight.quadratic", 0.44f);
+			mazeShader.setVec3("flashLight.lightPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		}
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
@@ -469,21 +477,23 @@ int main() {
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, floorSize);
 
 		// FLASH LIGHT
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, flashLightTexture);
-		glBindVertexArray(cubeVAO);
-		flashLightShader.use();
-		setLightPositionsForShader(lightPositions, flashLightShader);
-		flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
-		flashLightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		flashLightShader.setMat4("view", view);
-		flashLightShader.setMat4("projection", projection);
-		flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, flashLight.position);
-		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-		flashLightShader.setMat4("model", model);
-		flashLight.Draw(flashLightShader);
+		if (!playerHasFlashlight) {
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, flashLightTexture);
+			glBindVertexArray(cubeVAO);
+			flashLightShader.use();
+			setLightPositionsForShader(lightPositions, flashLightShader);
+			flashLightShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
+			flashLightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+			flashLightShader.setMat4("view", view);
+			flashLightShader.setMat4("projection", projection);
+			flashLightShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+			glm::mat4 flModel = glm::mat4(1.0f);
+			flModel = glm::translate(flModel, flashLight.position);
+			flModel = glm::scale(flModel, glm::vec3(0.1f, 0.1f, 0.1f));
+			flashLightShader.setMat4("model", flModel);
+			flashLight.Draw(flashLightShader);
+		}
 
 		// boat
 		glActiveTexture(GL_TEXTURE0);
@@ -503,16 +513,18 @@ int main() {
 			boatSpawn = boat.position;
 
 		// set camera location fixed to boat
-		cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
+		if (!enableFlight) {
+			cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
+		}
 
 		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, boat.position);
+		glm::mat4 boatModel = glm::mat4(1.0f);
+		boatModel = glm::translate(boatModel, boat.position);
 
 		// if you scale the object, make sure to set the object size to the same factor
 		int scaleFactor = 10;
-		model = glm::scale(model, glm::vec3(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f / scaleFactor));
-		boatShader.setMat4("model", model);
+		boatModel = glm::scale(boatModel, glm::vec3(1.0f / scaleFactor, 1.0f / scaleFactor, 1.0f / scaleFactor));
+		boatShader.setMat4("model", boatModel);
 		boat.Draw(boatShader);
 
 		// Draw Skybox
@@ -594,7 +606,13 @@ void processInput(GLFWwindow* window)
 		// Check if the player is not already jumping or comming down
 		if (!jumping && !jumpEnd)
 			jumping = true;
-		//cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+		if (playerHasFlashlight) {
+			// Switch the light on / off
+			flashLightOn = !flashLightOn;
+		}
 	}
 	// I just added this to see my coordinates
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
@@ -651,6 +669,93 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition) {
 	cameraFront = glm::normalize(front);
 }
 
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		// Get the x and y position of your mouse on the screen
+		double xPosition;
+		double yPosition;
+		glfwGetCursorPos(window, &xPosition, &yPosition);
+
+		// Set projection and view
+		glm::mat4 projection = glm::perspective(glm::radians(cameraFov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
+
+		// Stuff for the ray
+		glm::vec3 ray_origin = cameraPosition; // Where is the ray comming from in the 3D world?
+		glm::vec2 screen_pos = glm::vec2(xPosition, yPosition); // What is the position of the mouse on the screen?
+		glm::vec4 view_pos = glm::vec4(screen_pos.x / SCREEN_WIDTH * 2.0 - 1.0, screen_pos.y / SCREEN_HEIGHT * 2.0 - 1.0, 0.0, 1.0); // What is the position of the view
+		glm::mat4 inv_projection = glm::inverse(projection); // Projection
+		glm::mat4 inv_view = glm::inverse(view);
+		glm::vec4 world_pos = inv_projection * view_pos; // Position of the view inside the 3D world
+
+		world_pos /= world_pos.w;
+		world_pos = inv_view * world_pos;
+
+		// Cast the ray to the direction of the cameraFront
+		glm::vec3 ray_direction = glm::normalize(cameraFront);
+
+		// Set at what locations the object is spawned
+		glm::vec3 box_min = flashLightSpawn - 0.5f;
+		glm::vec3 box_max = flashLightSpawn + 0.5f;
+
+		// Set the min and max x for the object's box
+		float x_min = (box_min.x - ray_origin.x) / ray_direction.x;
+		float x_max = (box_max.x - ray_origin.x) / ray_direction.x;
+
+		// If min > max, switch them
+		if (x_min > x_max) {
+			std::swap(x_min, x_max);
+		}
+
+		// Set the min and max y for the object's box
+		float y_min = (box_min.y - ray_origin.y) / ray_direction.y;
+		float y_max = (box_max.y - ray_origin.y) / ray_direction.y;
+
+		// if min > max, switch
+		if (y_min > y_max) {
+			std::swap(y_min, y_max);
+		}
+
+		// This is needed to you can also click it from the above
+		if (y_min > x_min) {
+			x_min = y_min;
+		}
+
+		if (y_max < x_max) {
+			x_max = y_max;
+		}
+
+		// Set the min and max z for the object's box
+		float z_min = (box_min.z - ray_origin.z) / ray_direction.z;
+		float z_max = (box_max.z - ray_origin.z) / ray_direction.z;
+		
+		// if min > max, switch
+		if (z_min > z_max) {
+			std::swap(z_min, z_max);
+		}
+
+		// This is needed to you can also click it from the side
+		if (z_min > x_min) {
+			x_min = z_min;
+		}
+
+		if (z_max < x_max) {
+			x_max = z_max;
+		}
+
+		// Get an intersection point
+		glm::vec3 intersection_point = ray_origin + ray_direction * x_min;
+
+		// If the intersactionpoint touches something inbetween the box
+		if (intersection_point.x >= box_min.x && intersection_point.x <= box_max.x &&
+			intersection_point.y >= box_min.y && intersection_point.y <= box_max.y &&
+			intersection_point.z >= box_min.z && intersection_point.z <= box_max.z) {
+			playerHasFlashlight = true;
+		}
+	}
+}
+
 vector<glm::vec3> getLightPositions() {
 	vector<glm::vec3> positions;
 	positions.push_back(glm::vec3(2.0f, 1.0f, 2.0f));
@@ -670,26 +775,9 @@ void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader)
 	for (int i = 0; i < lightPositions.size(); i++) {
 		shader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
 		shader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
-		shader.setFloat("lights[" + to_string(i) + "].linear", 0.0007f);
-		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.0002f);
+		shader.setFloat("lights[" + to_string(i) + "].linear", 0.07f);
+		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.017f);
 	}
-}
-
-// Reset a value when it is invalid (out of the maze)
-int setToValueIfInvalid(int value, int check, char operation, int newValue) {
-	if (operation == '>') {
-		if (value > check) {
-			return newValue;
-		}
-		return value;
-	}
-	else if (operation == '<') {
-		if (value < check) {
-			return newValue;
-		}
-		return value;
-	}
-	return value;
 }
 
 bool checkCollisions(Model& model, vector<glm::vec3> vertices)

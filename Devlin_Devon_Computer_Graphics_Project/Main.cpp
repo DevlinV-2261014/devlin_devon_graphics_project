@@ -26,7 +26,6 @@ void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 vector<glm::vec3> getLightPositions();
 void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
-int setToValueIfInvalid(int value, int check, char operation, int newValue);
 bool checkCollisions(Model& model, vector<glm::vec3> vertices);
 
 // Cube vertices
@@ -308,10 +307,10 @@ int main() {
 	skyboxShader.setInt("skybox", 0);
 
 	// Position the flashlight close to the player
-	int minX{ setToValueIfInvalid(cameraPosition.x - 3, 0, '<', 0) };
-	int maxX{ setToValueIfInvalid(cameraPosition.x + 3, highestX, '>', highestX) };
-	int minZ{ setToValueIfInvalid(cameraPosition.z - 3, 0, '<', 0) };
-	int maxZ{ setToValueIfInvalid(cameraPosition.z + 3, highestZ, '>', highestZ) };
+	int minX = cameraPosition.x - 3;
+	int maxX = cameraPosition.x + 3;
+	int minZ = cameraPosition.z - 3;
+	int maxZ = cameraPosition.z + 3;
 
 	flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 	boatSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
@@ -779,23 +778,6 @@ void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader)
 		shader.setFloat("lights[" + to_string(i) + "].linear", 0.07f);
 		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.017f);
 	}
-}
-
-// Reset a value when it is invalid (out of the maze)
-int setToValueIfInvalid(int value, int check, char operation, int newValue) {
-	if (operation == '>') {
-		if (value > check) {
-			return newValue;
-		}
-		return value;
-	}
-	else if (operation == '<') {
-		if (value < check) {
-			return newValue;
-		}
-		return value;
-	}
-	return value;
 }
 
 bool checkCollisions(Model& model, vector<glm::vec3> vertices)

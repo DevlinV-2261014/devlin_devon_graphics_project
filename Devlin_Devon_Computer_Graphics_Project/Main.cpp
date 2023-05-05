@@ -6,6 +6,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <irrKlang/irrKlang.h>
+
 #include <string>
 #include <vector>
 
@@ -155,6 +157,15 @@ bool flashLightOn{ false };
 vector<glm::vec3> wallCubeLocations;
 
 int main() {
+	// Create a sound engine
+	irrklang::ISoundEngine* soundEngine = irrklang::createIrrKlangDevice();
+
+	if (!soundEngine) {
+		return -1;
+	}
+	// Play a song
+	soundEngine->play2D("The_Dark_Maze.mp3", true);
+
 	// generate random maze
 	MazeGen(19, 31);
 
@@ -550,6 +561,9 @@ int main() {
 	glDeleteBuffers(1, &cubeVBO);
 	glDeleteVertexArrays(1, &skyboxVAO);
 	glDeleteBuffers(1, &skyboxVBO);
+	
+	// Close the sound engine
+	soundEngine->drop();
 
 	glfwTerminate();
 	return 0;

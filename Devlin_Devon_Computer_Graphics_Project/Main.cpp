@@ -514,7 +514,9 @@ int main() {
 			boatSpawn = boat.position;
 
 		// set camera location fixed to boat
-		cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
+		if (!enableFlight) {
+			cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
+		}
 
 		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 		glm::mat4 boatModel = glm::mat4(1.0f);

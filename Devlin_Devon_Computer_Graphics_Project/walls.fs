@@ -28,7 +28,7 @@ struct FlashLight {
 };
 
 // Must be the same as getLightPositions().size() in Main.cpp
-#define POINT_LIGHTS 8
+#define POINT_LIGHTS 10
 uniform PointLight lights[POINT_LIGHTS];
 
 uniform FlashLight flashLight;

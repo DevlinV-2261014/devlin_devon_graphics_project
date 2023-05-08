@@ -6,6 +6,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <irrKlang/irrKlang.h>
+
 #include <string>
 #include <vector>
 
@@ -24,7 +26,7 @@ void processInput(GLFWwindow* window);
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 void mouseCalllback(GLFWwindow* window, double xPosition, double yPosition);
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-vector<glm::vec3> getLightPositions();
+vector<glm::vec3> getLightPositions(vector<glm::vec3> mazeLayout, int highestX, int highestZ);
 void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
 bool checkCollisions(Model& model, vector<glm::vec3> vertices);
 
@@ -152,9 +154,19 @@ glm::vec3 flashLightSpawn;
 bool playerHasFlashlight{ false };
 bool flashLightOn{ false };
 
+vector<glm::vec3> lightPositions;
 vector<glm::vec3> wallCubeLocations;
 
 int main() {
+	// Create a sound engine
+	irrklang::ISoundEngine* soundEngine = irrklang::createIrrKlangDevice();
+
+	if (!soundEngine) {
+		return -1;
+	}
+	// Play a song
+	soundEngine->play2D("The_Dark_Maze.mp3", true);
+
 	// generate random maze
 	MazeGen(19, 31);
 
@@ -193,6 +205,9 @@ int main() {
 	}
 
 	cameraPosition = getSpawnLocation(cubeLocations, 0, 2, 0, highestZ, 0.0f);
+
+	// Get random light positions
+	lightPositions = getLightPositions(cubeLocations, highestX, highestZ);
 
 	// Initialize the window
 	glfwInit();
@@ -388,7 +403,6 @@ int main() {
 		glBindVertexArray(cubeVAO);
 
 		// Set light sources in the shader
-		vector<glm::vec3> lightPositions = getLightPositions();
 		setLightPositionsForShader(lightPositions, mazeShader);
 
 		// INSTANCING: a lot of PLAGIAAT
@@ -550,6 +564,9 @@ int main() {
 	glDeleteBuffers(1, &cubeVBO);
 	glDeleteVertexArrays(1, &skyboxVAO);
 	glDeleteBuffers(1, &skyboxVBO);
+	
+	// Close the sound engine
+	soundEngine->drop();
 
 	glfwTerminate();
 	return 0;
@@ -756,16 +773,11 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	}
 }
 
-vector<glm::vec3> getLightPositions() {
+vector<glm::vec3> getLightPositions(vector<glm::vec3> mazeLayout, int highestX, int highestZ) {
 	vector<glm::vec3> positions;
-	positions.push_back(glm::vec3(2.0f, 1.0f, 2.0f));
-	positions.push_back(glm::vec3(15.0f, 1.0f, 15.0f));
-	positions.push_back(glm::vec3(7.0f, 1.0f, 25.0f));
-	positions.push_back(glm::vec3(25.0f, 1.0f, 2.0f));
-	positions.push_back(glm::vec3(5.0f, 1.0f, 2.0f));
-	positions.push_back(glm::vec3(20.0f, 1.0f, 15.0f));
-	positions.push_back(glm::vec3(10.0f, 1.0f, 25.0f));
-	positions.push_back(glm::vec3(12.0f, 1.0f, 2.0f));
+	for (int i = 0; i < 10; i++) {
+		positions.push_back(getSpawnLocation(mazeLayout, 5, highestX - 5, 5, highestZ - 5, -1.0f)); // y = -1 because position is y of a block - (-1). This will make it One
+	}
 
 	return positions;
 }
@@ -775,8 +787,8 @@ void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader)
 	for (int i = 0; i < lightPositions.size(); i++) {
 		shader.setVec3("lights[" + to_string(i) + "].lightPosition", lightPositions[i].x, lightPositions[i].y, lightPositions[i].z);
 		shader.setFloat("lights[" + to_string(i) + "].constant", 1.0f);
-		shader.setFloat("lights[" + to_string(i) + "].linear", 0.07f);
-		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.017f);
+		shader.setFloat("lights[" + to_string(i) + "].linear", 0.045f);
+		shader.setFloat("lights[" + to_string(i) + "].quadratic", 0.0075f);
 	}
 }
 

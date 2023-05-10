@@ -73,6 +73,28 @@ void Shader::readFile(string path, bool vertex) {
     }
 }
 
+void Shader::shaderCompile(const char* code, bool vert)
+{
+    if (vert)
+        shader = glCreateShader(GL_VERTEX_SHADER);
+    else
+        shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(shader, 1, &code, NULL);
+    glCompileShader(shader);
+    // if compile errors were encountered, print them
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
+    };
+
+    if (vert)
+        vertex = shader;
+    else
+        fragment = shader;
+}
+
 void Shader::use()
 {
     glUseProgram(ID);
@@ -103,25 +125,5 @@ void Shader::setMat4(const string& name, const glm::mat4& mat) const
     glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 }
 
-void Shader::shaderCompile(const char* code, bool vert)
-{
-    if (vert)
-        shader = glCreateShader(GL_VERTEX_SHADER);
-    else
-        shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(shader, 1, &code, NULL);
-    glCompileShader(shader);
-    // if compile errors were encountered, print them
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
-    };
 
-    if (vert)
-        vertex = shader;
-    else
-        fragment = shader;
-}
 

@@ -274,16 +274,10 @@ int main() {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	// Wall textures
+	// Textures
 	unsigned int wallTexture = createTexture("wall.png");
-
-	// floor textures
 	unsigned int floorTexture = createTexture("water.jpg");
-
-	// flashlight texture
 	unsigned int flashLightTexture = createTexture("wall.png");
-
-	// boat texture
 	unsigned int boatTexture = createTexture("wood2.jpg");
 
 	// LIGHTNING
@@ -335,15 +329,13 @@ int main() {
 	flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 	boatSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 
-	// Flashlight
+	// Load models
 	Model flashLight(flashLightSpawn);
 	flashLight.loadModel("Linterna.obj");
-
-	// Boat
 	Model boat(boatSpawn);
 	boat.loadModel("boat.obj");
 
-	// Rendering in loop
+	// Rendering loop
 	while (!glfwWindowShouldClose(window))
 	{
 		// Change deltatime
@@ -446,6 +438,8 @@ int main() {
 		boatShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		boatShader.setMat4("view", view);
 		boatShader.setMat4("projection", projection);
+		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		glm::mat4 boatModel = glm::mat4(1.0f);
 
 		// collision detection
 		bool coll = checkCollisions(boat, wallCubeLocations);
@@ -453,14 +447,11 @@ int main() {
 			boat.position = boatSpawn;
 		else
 			boatSpawn = boat.position;
-
 		// set camera location fixed to boat
 		if (!enableFlight) {
 			cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
 		}
 
-		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-		glm::mat4 boatModel = glm::mat4(1.0f);
 		boatModel = glm::translate(boatModel, boat.position);
 
 		// if you scale the object, make sure to set the object size to the same factor

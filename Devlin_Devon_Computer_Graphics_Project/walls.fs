@@ -39,7 +39,7 @@ vec3 calculateFlashLight(FlashLight light, vec3 normal, vec3 fragPos, vec3 viewD
 void main()
 {
     // Declare variables
-    float ambientStrength = 0.15;
+    float ambientStrength = 0.05;
     float specularStrength = 1.0;
     vec3 norm = normalize(Normal);
     vec3 viewDirection = normalize(viewPosition - FragPosition);

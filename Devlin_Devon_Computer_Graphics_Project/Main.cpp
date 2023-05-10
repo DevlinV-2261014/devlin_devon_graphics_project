@@ -29,6 +29,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 vector<glm::vec3> getLightPositions(vector<glm::vec3> mazeLayout, int highestX, int highestZ);
 void setLightPositionsForShader(vector<glm::vec3> lightPositions, Shader shader);
 bool checkCollisions(Model& model, vector<glm::vec3> vertices);
+void instancing(unsigned int VAO, unsigned int texture, int size, bool floor);
+bool minMaxCheck(float min, float max);
 
 // Cube vertices
 float cubeVertices[] = {
@@ -156,6 +158,9 @@ bool flashLightOn{ false };
 
 vector<glm::vec3> lightPositions;
 vector<glm::vec3> wallCubeLocations;
+vector<glm::vec3> cubeLocations;
+
+int mazeSize;
 
 int main() {
 	// Create a sound engine
@@ -171,10 +176,10 @@ int main() {
 	MazeGen(19, 31);
 
 	// Read the maze file and create positions for each #
-	vector<glm::vec3> cubeLocations = getMazeLayout("maze.txt");
+	cubeLocations = getMazeLayout("maze.txt");
 
 	// calculate size of the actual maze to use later on
-	int mazeSize = cubeLocations.size();
+	mazeSize = cubeLocations.size();
 	
 	// Floor
 	// Find the highest x and Z to see where the floor should end.
@@ -269,16 +274,10 @@ int main() {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	// Wall textures
+	// Textures
 	unsigned int wallTexture = createTexture("wall.png");
-
-	// floor textures
 	unsigned int floorTexture = createTexture("water.jpg");
-
-	// flashlight texture
 	unsigned int flashLightTexture = createTexture("wall.png");
-
-	// boat texture
 	unsigned int boatTexture = createTexture("wood2.jpg");
 
 	// LIGHTNING
@@ -330,15 +329,13 @@ int main() {
 	flashLightSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 	boatSpawn = getSpawnLocation(cubeLocations, minX, maxX, minZ, maxZ, 0.4f);
 
-	// Flashlight
+	// Load models
 	Model flashLight(flashLightSpawn);
 	flashLight.loadModel("Linterna.obj");
-
-	// Boat
 	Model boat(boatSpawn);
 	boat.loadModel("boat.obj");
 
-	// Rendering in loop
+	// Rendering loop
 	while (!glfwWindowShouldClose(window))
 	{
 		// Change deltatime
@@ -405,90 +402,12 @@ int main() {
 		// Set light sources in the shader
 		setLightPositionsForShader(lightPositions, mazeShader);
 
-		// INSTANCING: a lot of PLAGIAAT
-		// transformation matrices
-		glm::mat4* modelMatsFloor = new glm::mat4[floorSize];
-		for (int i = 0; i < floorSize; i++)
-		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubeLocations[mazeSize + i]);
-			modelMatsFloor[i] = model;
-		}
+		// INSTANCING
+		// generate maze instancing
+		instancing(cubeVAO, wallTexture, mazeSize, false);
 
-		glm::mat4* modelMatsMaze = new glm::mat4[mazeSize];
-		for (int i = 0; i < mazeSize; i++)
-		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubeLocations[i]);
-			modelMatsMaze[i] = model;
-		}		
-
-		// configure vertex buffer object (for both floor and maze)
-		// maze
-		unsigned int buffer;
-		glGenBuffers(1, &buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		glBufferData(GL_ARRAY_BUFFER, mazeSize * sizeof(glm::mat4), &modelMatsMaze[0], GL_STATIC_DRAW);
-		glBindVertexArray(cubeVAO);
-		for (unsigned int i = 0; i < mazeSize; i++)
-		{
-			// vertex characteristics
-			std::size_t vec4Size = sizeof(glm::vec4);
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
-			glEnableVertexAttribArray(5);
-			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-			glEnableVertexAttribArray(6);
-			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
-
-			glVertexAttribDivisor(3, 1);
-			glVertexAttribDivisor(4, 1);
-			glVertexAttribDivisor(5, 1);
-			glVertexAttribDivisor(6, 1);
-
-			glBindVertexArray(0);
-		}
-		
-		// draw cubes for the maze
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, wallTexture);
-		glBindVertexArray(cubeVAO);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, mazeSize);
-
-		// floor
-		unsigned int buffer1;
-		glGenBuffers(1, &buffer1);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer1);
-		glBufferData(GL_ARRAY_BUFFER, floorSize * sizeof(glm::mat4), &modelMatsFloor[0], GL_STATIC_DRAW);
-		glBindVertexArray(cubeVAO);
-		for (unsigned int i = 0; i < floorSize; i++)
-		{
-			// vertex characteristics
-			std::size_t vec4Size = sizeof(glm::vec4);
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
-			glEnableVertexAttribArray(5);
-			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-			glEnableVertexAttribArray(6);
-			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
-
-			glVertexAttribDivisor(3, 1);
-			glVertexAttribDivisor(4, 1);
-			glVertexAttribDivisor(5, 1);
-			glVertexAttribDivisor(6, 1);
-
-			glBindVertexArray(0);
-		}
-		
-		// draw cubes for the floor
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, floorTexture);
-		glBindVertexArray(cubeVAO);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, floorSize);
+		// generate floor instancing
+		instancing(cubeVAO, floorTexture, floorSize, true);
 
 		// FLASH LIGHT
 		if (!playerHasFlashlight) {
@@ -519,20 +438,20 @@ int main() {
 		boatShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		boatShader.setMat4("view", view);
 		boatShader.setMat4("projection", projection);
+		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		glm::mat4 boatModel = glm::mat4(1.0f);
 
+		// collision detection
 		bool coll = checkCollisions(boat, wallCubeLocations);
 		if (coll == false)
 			boat.position = boatSpawn;
 		else
 			boatSpawn = boat.position;
-
 		// set camera location fixed to boat
 		if (!enableFlight) {
 			cameraPosition = boat.position + glm::vec3(-0.25f, 0.5f, 0);
 		}
 
-		boatShader.setVec3("viewPosition", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-		glm::mat4 boatModel = glm::mat4(1.0f);
 		boatModel = glm::translate(boatModel, boat.position);
 
 		// if you scale the object, make sure to set the object size to the same factor
@@ -704,9 +623,9 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 		glm::vec4 view_pos = glm::vec4(screen_pos.x / SCREEN_WIDTH * 2.0 - 1.0, screen_pos.y / SCREEN_HEIGHT * 2.0 - 1.0, 0.0, 1.0); // What is the position of the view
 		glm::mat4 inv_projection = glm::inverse(projection); // Projection
 		glm::mat4 inv_view = glm::inverse(view);
-		glm::vec4 world_pos = inv_projection * view_pos; // Position of the view inside the 3D world
+		glm::vec4 world_pos = inv_view * (inv_projection * view_pos / (inv_projection * view_pos).w); // Position of the view inside the 3D world
 
-		world_pos /= world_pos.w;
+		//world_pos /= world_pos.w;
 		world_pos = inv_view * world_pos;
 
 		// Cast the ray to the direction of the cameraFront
@@ -717,57 +636,54 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 		glm::vec3 box_max = flashLightSpawn + 0.5f;
 
 		// Set the min and max x for the object's box
-		float x_min = (box_min.x - ray_origin.x) / ray_direction.x;
-		float x_max = (box_max.x - ray_origin.x) / ray_direction.x;
-
-		// If min > max, switch them
-		if (x_min > x_max) {
-			std::swap(x_min, x_max);
-		}
+		float x_min, x_max, y_min, y_max, z_min, z_max;
+		x_min = (box_min.x - ray_origin.x) / ray_direction.x;
+		x_max = (box_max.x - ray_origin.x) / ray_direction.x;
 
 		// Set the min and max y for the object's box
-		float y_min = (box_min.y - ray_origin.y) / ray_direction.y;
-		float y_max = (box_max.y - ray_origin.y) / ray_direction.y;
-
-		// if min > max, switch
-		if (y_min > y_max) {
-			std::swap(y_min, y_max);
-		}
-
-		// This is needed to you can also click it from the above
-		if (y_min > x_min) {
-			x_min = y_min;
-		}
-
-		if (y_max < x_max) {
-			x_max = y_max;
-		}
+		y_min = (box_min.y - ray_origin.y) / ray_direction.y;
+		y_max = (box_max.y - ray_origin.y) / ray_direction.y;
 
 		// Set the min and max z for the object's box
-		float z_min = (box_min.z - ray_origin.z) / ray_direction.z;
-		float z_max = (box_max.z - ray_origin.z) / ray_direction.z;
+		z_min = (box_min.z - ray_origin.z) / ray_direction.z;
+		z_max = (box_max.z - ray_origin.z) / ray_direction.z;
+
+		// If min > max, switch them
+		if (minMaxCheck(x_min, x_max))
+			std::swap(x_min, x_max);	
+
+		// if min > max, switch
+		if (minMaxCheck(y_min, y_max))
+			std::swap(y_min, y_max);
+
+		// This is needed to you can also click it from the above
+		if (minMaxCheck(y_min,x_min))
+			x_min = y_min;
+
+		if (minMaxCheck(y_max, x_max))
+			x_max = y_max;
 		
 		// if min > max, switch
-		if (z_min > z_max) {
+		if (minMaxCheck(z_min, z_max))
 			std::swap(z_min, z_max);
-		}
 
 		// This is needed to you can also click it from the side
-		if (z_min > x_min) {
+		if (minMaxCheck(z_min, x_min))
 			x_min = z_min;
-		}
 
-		if (z_max < x_max) {
+		if (minMaxCheck(z_max, x_max))
 			x_max = z_max;
-		}
 
 		// Get an intersection point
 		glm::vec3 intersection_point = ray_origin + ray_direction * x_min;
 
 		// If the intersactionpoint touches something inbetween the box
-		if (intersection_point.x >= box_min.x && intersection_point.x <= box_max.x &&
-			intersection_point.y >= box_min.y && intersection_point.y <= box_max.y &&
-			intersection_point.z >= box_min.z && intersection_point.z <= box_max.z) {
+		if (intersection_point.x >= box_min.x
+			&& intersection_point.x <= box_max.x
+			&& intersection_point.y >= box_min.y
+			&& intersection_point.y <= box_max.y
+			&& intersection_point.z >= box_min.z
+			&& intersection_point.z <= box_max.z) {
 			playerHasFlashlight = true;
 		}
 	}
@@ -806,65 +722,59 @@ bool checkCollisions(Model& model, vector<glm::vec3> vertices)
 
 		glm::vec3 cube = vertices[i];
 		// x axis
-		if (boatSpawn.x - model.size.x / xScale <= cube.x && cube.x - 1 <= boatSpawn.x)
+		if (boatSpawn.x - model.size.x / xScale <= cube.x && cube.x - 1 <= boatSpawn.x || boatSpawn.x + model.size.x / xScale <= cube.x && cube.x + 1 <= boatSpawn.x || boatSpawn.x - model.size.x / xScale >= cube.x && cube.x - 1 >= boatSpawn.x || boatSpawn.x + model.size.x / xScale >= cube.x && cube.x + 1 >= boatSpawn.x)
 			axisXCollision = true;
 		// z axis
-		if (boatSpawn.z - model.size.z / zScale <= cube.z && cube.z - 1 <= boatSpawn.z)
-			axisZCollision = true;
-
-		if (axisXCollision && axisZCollision)
-			return true;
-	}
-
-	for (int i = 0; i < vertices.size(); i++)
-	{
-		axisXCollision = false;
-		axisZCollision = false;
-
-		glm::vec3 cube = vertices[i];
-		// x axis
-		if (boatSpawn.x - model.size.x / xScale >= cube.x && cube.x - 1 >= boatSpawn.x)
-			axisXCollision = true;
-		// z axis
-		if (boatSpawn.z - model.size.z / zScale >= cube.z && cube.z - 1 >= boatSpawn.z)
-			axisZCollision = true;
-
-		if (axisXCollision && axisZCollision)
-			return true;
-	}
-
-	for (int i = 0; i < vertices.size(); i++)
-	{
-		axisXCollision = false;
-		axisZCollision = false;
-
-		glm::vec3 cube = vertices[i];
-		// x axis
-		if (boatSpawn.x + model.size.x / xScale >= cube.x && cube.x + 1 >= boatSpawn.x)
-			axisXCollision = true;
-		// z axis
-		if (boatSpawn.z + model.size.z / zScale >= cube.z && cube.z + 1 >= boatSpawn.z)
-			axisZCollision = true;
-
-		if (axisXCollision && axisZCollision)
-			return true;
-	}
-
-	for (int i = 0; i < vertices.size(); i++)
-	{
-		axisXCollision = false;
-		axisZCollision = false;
-
-		glm::vec3 cube = vertices[i];
-		// x axis
-		if (boatSpawn.x + model.size.x / xScale <= cube.x && cube.x + 1 <= boatSpawn.x)
-			axisXCollision = true;
-		// z axis
-		if (boatSpawn.z + model.size.z / zScale <= cube.z && cube.z + 1 <= boatSpawn.z)
+		if (boatSpawn.z - model.size.z / zScale <= cube.z && cube.z - 1 <= boatSpawn.z || boatSpawn.z - model.size.z / zScale >= cube.z && cube.z - 1 >= boatSpawn.z || boatSpawn.z + model.size.z / zScale >= cube.z && cube.z + 1 >= boatSpawn.z || boatSpawn.z + model.size.z / zScale <= cube.z && cube.z + 1 <= boatSpawn.z)
 			axisZCollision = true;
 
 		if (axisXCollision && axisZCollision)
 			return true;
 	}
 	return false;
+}
+
+void instancing(unsigned int VAO, unsigned int texture, int size, bool floor) {
+	// transformation matrices
+	glm::mat4* modelMatsMaze = new glm::mat4[size];
+	for (int i = 0; i < size; i++)
+	{
+		glm::mat4 model = glm::mat4(1.0f);
+		if (floor)
+			model = glm::translate(model, cubeLocations[mazeSize + i]);
+		else
+			model = glm::translate(model, cubeLocations[i]);
+		modelMatsMaze[i] = model;
+	}
+
+	// configure vertex buffer object (for both floor and maze)
+	unsigned int buffer;
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, size * sizeof(glm::mat4), &modelMatsMaze[0], GL_STATIC_DRAW);
+	glBindVertexArray(VAO);
+	for (unsigned int i = 0; i < size; i++)
+	{
+		// vertex characteristics
+		std::size_t vec4Size = sizeof(glm::vec4);
+		for (int j = 0; j < 4; j++) {
+			glEnableVertexAttribArray(3 + j);
+			glVertexAttribPointer(3 + j, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(j*vec4Size));
+			glVertexAttribDivisor(3 + j, 1);
+		}
+		glBindVertexArray(0);
+	}
+
+	// draw instanced cubes
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindVertexArray(VAO);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, size);
+}
+
+bool minMaxCheck(float min, float max) {
+	if (min > max)
+		return true;
+	else
+		return false;
 }
